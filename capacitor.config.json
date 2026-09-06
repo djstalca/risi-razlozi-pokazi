@@ -2,7 +2,7 @@
   "appId": "si.djstalca.risirazlozipokazi",
   "appName": "Riši, razloži, pokaži",
   "webDir": "www",
-  "loggingBehavior": "debug",
+  "loggingBehavior": "none",
   "android": {
     "backgroundColor": "#101114"
   }
