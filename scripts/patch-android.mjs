@@ -26,14 +26,18 @@ if (fs.existsSync(appGradle)) {
   g = g.replace(/versionCode\s+\d+/, 'versionCode 1');
   g = g.replace(/versionName\s+["'][^"']+["']/, 'versionName "1.0.0"');
 
-  if (!g.includes('keystore.properties')) {
+  if (!g.includes('def keystoreProperties = new Properties()')) {
     g = `def keystoreProperties = new Properties()\ndef keystorePropertiesFile = rootProject.file('keystore.properties')\ndef hasReleaseKeystore = keystorePropertiesFile.exists()\nif (hasReleaseKeystore) {\n    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))\n}\n\n${g}`;
+  }
 
+  if (!g.includes('signingConfigs {')) {
     g = g.replace(
       /android \{\n/,
       `android {\n    signingConfigs {\n        release {\n            if (hasReleaseKeystore) {\n                storeFile file(keystoreProperties['storeFile'])\n                storePassword keystoreProperties['storePassword']\n                keyAlias keystoreProperties['keyAlias']\n                keyPassword keystoreProperties['keyPassword']\n            }\n        }\n    }\n`
     );
+  }
 
+  if (!g.includes('if (hasReleaseKeystore) signingConfig signingConfigs.release')) {
     g = g.replace(
       /release \{\n\s*minifyEnabled/,
       `release {\n            if (hasReleaseKeystore) signingConfig signingConfigs.release\n            minifyEnabled`
@@ -44,12 +48,31 @@ if (fs.existsSync(appGradle)) {
 
 if (fs.existsSync(manifest)) {
   let m = fs.readFileSync(manifest, 'utf8');
-  m = m.replace(/<application\s+/, '<application\n        android:allowBackup="false"\n        android:usesCleartextTraffic="false"\n        ');
+
+  // Capacitor template already contains allowBackup, so replace it instead of
+  // inserting a duplicate attribute. Keep this block safe to run repeatedly.
+  if (/android:allowBackup="[^"]*"/.test(m)) {
+    m = m.replace(/android:allowBackup="[^"]*"/, 'android:allowBackup="false"');
+  } else {
+    m = m.replace(/<application\n/, '<application\n        android:allowBackup="false"\n');
+  }
+
+  if (/android:usesCleartextTraffic="[^"]*"/.test(m)) {
+    m = m.replace(/android:usesCleartextTraffic="[^"]*"/, 'android:usesCleartextTraffic="false"');
+  } else {
+    m = m.replace(/android:allowBackup="false"\n/, 'android:allowBackup="false"\n        android:usesCleartextTraffic="false"\n');
+  }
+
   m = m.replace(/android:configChanges="([^"]*)"/, (_, value) => {
-    const parts = value.split('|');
+    const parts = value.split('|').filter(Boolean);
     if (!parts.includes('density')) parts.push('density');
-    return `android:configChanges="${parts.join('|')}"`;
+    return `android:configChanges="${[...new Set(parts)].join('|')}"`;
   });
+
+  // The app is intentionally fully offline and has no network feature in v1.0.
+  // Removing INTERNET provides an additional technical guarantee for Data Safety.
+  m = m.replace(/\n\s*<uses-permission android:name="android\.permission\.INTERNET"\s*\/?>/g, '');
+
   fs.writeFileSync(manifest, m);
 }
 
@@ -68,4 +91,4 @@ if (fs.existsSync(mainActivity)) {
   }
 }
 
-console.log('Android production patch applied: SDK 24/36, release signing hook, backup/cleartext hardening, density handling and keep-screen-on.');
+console.log('Android production patch applied: SDK 24/36, release signing, offline/privacy hardening and keep-screen-on.');
