@@ -3,11 +3,16 @@ name: Android Build
 on:
   workflow_dispatch:
   push:
+    branches: [play-store-production-ready]
     tags:
       - 'v*'
 
 permissions:
   contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   android:
@@ -34,5 +39,12 @@ jobs:
         with:
           name: risi-razlozi-pokazi-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload unsigned release AAB preflight
+        uses: actions/upload-artifact@v4
+        with:
+          name: risi-razlozi-pokazi-release-aab-preflight
+          path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 14
