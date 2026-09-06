@@ -6,6 +6,7 @@ function renderHome(app){
   <h1>AKCIJA</h1>
   <p>Razloži. Nariši. Pokaži. Izberi 3, 4 ali 5 točk in pripelji svojo ekipo čez 48 igralnih polj do cilja.</p>
   <div class="actions">
+   ${pendingResumeScreen?`<button class="success" onclick="continueGame()">NADALJUJ IGRO</button>`:''}
    <button class="primary" onclick="startSetup()">NOVA IGRA</button>
    <button class="secondary" onclick="setScreen('rules')">PRAVILA</button>
   </div>
@@ -14,7 +15,11 @@ function renderHome(app){
   <strong>450 ročno izbranih slovenskih pojmov</strong>
   <p class="muted">150 lahkih, 150 srednjih in 150 težkih. Brez umetno ustvarjenih nizov podobnih izrazov.</p>
  </section>
- <div class="footerNote">Samostojna digitalna igra z originalno vsebino in oblikovanjem.</div>`;
+ <div class="footerNote">Samostojna slovenska družabna igra z originalno vsebino in oblikovanjem.</div>`;
+}
+function continueGame(){
+ if(!pendingResumeScreen)return;
+ state.screen=pendingResumeScreen;pendingResumeScreen=null;save();render();
 }
 function renderRules(app){
  app.innerHTML=`
@@ -31,7 +36,7 @@ function renderRules(app){
   </ol>
  </section>`;
 }
-function startSetup(){state=freshState();state.screen='setup';save();render()}
+function startSetup(){pendingResumeScreen=null;state=freshState();state.screen='setup';save();render()}
 
 function renderSetup(app){
  app.innerHTML=`
@@ -48,7 +53,7 @@ function renderSetup(app){
     ${state.teams.map((t,i)=>`
      <div class="teamRow">
       <div class="teamDot" style="background:${teamColor(i)}">${i+1}</div>
-      <input aria-label="Ime ekipe ${i+1}" value="${esc(t.name)}" oninput="renameTeam(${i},this.value)">
+      <input maxlength="40" autocomplete="off" aria-label="Ime ekipe ${i+1}" value="${esc(t.name)}" oninput="renameTeam(${i},this.value)">
      </div>`).join('')}
    </div>
    <div class="grid2">
@@ -70,13 +75,13 @@ function renderSetup(app){
  </section>`;
 }
 function changeTeamCount(v){
- const n=Number(v);
+ const n=Math.min(4,Math.max(2,Number(v)||2));
  while(state.teams.length<n)state.teams.push({name:`Ekipa ${state.teams.length+1}`,pos:0});
  state.teams=state.teams.slice(0,n);save();render();
 }
-function renameTeam(i,v){state.teams[i].name=v.trim()||`Ekipa ${i+1}`;save()}
+function renameTeam(i,v){state.teams[i].name=String(v).trim().slice(0,40)||`Ekipa ${i+1}`;save()}
 function beginGame(){
- state.current=0;state.teams.forEach(t=>t.pos=0);
- state.used={"3":[],"4":[],"5":[]};state.challenge=null;state.openBag=[];state.lastMove=null;
+ pendingResumeScreen=null;state.current=0;state.teams.forEach(t=>t.pos=0);
+ state.used={};state.challenge=null;state.openBag=[];state.lastMove=null;state.winner=null;
  state.screen='board';save();render();
 }
