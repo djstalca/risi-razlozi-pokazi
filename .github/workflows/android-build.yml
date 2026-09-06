@@ -18,14 +18,16 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: npm
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
       - uses: android-actions/setup-android@v3
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - run: npm run check
-      - run: npm run android:init
+      - run: npm run android:sync
       - run: npm run android:verify
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
