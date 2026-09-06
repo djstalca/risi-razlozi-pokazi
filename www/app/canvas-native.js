@@ -32,27 +32,27 @@ function undoCanvas(){
  img.src=data;
 }
 
-if((state.screen==='timer'||state.screen==='draw')&&(!state.timerEnd||state.timerEnd<=Date.now())){
- state.screen='result';state.timerEnd=null;save();
-}
 async function setupNativeIntegration(){
  try{
   const appPlugin=window.Capacitor?.Plugins?.App;
   if(!appPlugin?.addListener)return;
   await appPlugin.addListener('backButton', async ()=>{
    if(state.screen==='home'){
-    if(confirm('Zaprem igro?')) await appPlugin.exitApp();
+    if(confirm('Zaprem igro?'))await appPlugin.exitApp();
     return;
    }
    if(state.screen==='rules'||state.screen==='setup'){
     state.screen='home';save();render();return;
    }
+   if(state.screen==='board'){
+    pendingResumeScreen='board';state.screen='home';save();render();return;
+   }
    if(state.screen==='timer'||state.screen==='draw'){
-    if(confirm('Končam trenutno rundo in se vrnem na rezultat?'))finishTimer();
+    if(confirm('Končam trenutno rundo in pokažem rezultat?'))finishTimer();
     return;
    }
    if(state.screen==='winner'){
-    state.screen='home';save();render();return;
+    pendingResumeScreen=null;state.screen='home';save();render();return;
    }
    state.challenge=null;
    state.roundDifficulty=null;
@@ -66,7 +66,13 @@ async function setupNativeIntegration(){
   console.warn('Native back integration unavailable',e);
  }
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
 
-setupNativeIntegration();
-render();
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
+window.addEventListener('pagehide',save);
+
+async function bootstrapApp(){
+ await hydrateNativeState();
+ await setupNativeIntegration();
+ render();
+}
+bootstrapApp();
