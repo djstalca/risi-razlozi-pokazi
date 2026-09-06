@@ -13,7 +13,7 @@
     "android:sync": "npm run assets:generate && npx capacitor-assets generate --android && npx cap sync android && node scripts/patch-android.mjs",
     "android:open": "npx cap open android",
     "android:debug": "cd android && ./gradlew assembleDebug",
-    "android:verify": "cd android && ./gradlew lint test assembleDebug",
+    "android:verify": "cd android && ./gradlew lint test assembleDebug bundleRelease",
     "android:bundle": "cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
