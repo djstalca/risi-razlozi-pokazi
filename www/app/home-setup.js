@@ -5,7 +5,7 @@ function renderHome(app){
   <div class="badge">Slovenska družabna igra</div>
   <div class="homeBrand">AKCIJA</div>
   <h1>Riši, razloži, pokaži</h1>
-  <p>Izberi 3, 4 ali 5 točk in pripelji svojo ekipo čez 48 igralnih polj do cilja.</p>
+  <p>Izberi 3, 4 ali 5 točk in pripelji svojo ekipo po izbrani igralni poti do cilja.</p>
   <div class="actions">
    ${pendingResumeScreen?`<button class="success" onclick="continueGame()">NADALJUJ IGRO</button>`:''}
    <button class="primary" onclick="newGameFromHome()">NOVA IGRA</button>
@@ -23,7 +23,7 @@ function continueGame(){
  state.screen=pendingResumeScreen;pendingResumeScreen=null;save();render();
 }
 function userPreferences(){
- return {duration:state.duration,bumping:state.bumping,sound:state.sound,vibration:state.vibration};
+ return {duration:state.duration,gameLength:state.gameLength,bumping:state.bumping,sound:state.sound,vibration:state.vibration};
 }
 function newGameSetup(){
  const prefs=userPreferences();
@@ -46,6 +46,7 @@ function renderRules(app){
    <li><strong>Način</strong> določa polje, na katerem stoji ekipa: razloži, nariši ali pokaži.</li>
    <li><strong>Pred vsako rundo</strong> izbereš 3, 4 ali 5 točk. Višja vrednost pomeni težji pojem.</li>
    <li><strong>Pred začetkom</strong> podajalec pritisne in drži za prikaz pojma, si ga zapomni in nato začne rundo.</li>
+   <li><strong>Dolžino igre</strong> izbereš pred začetkom: Hitra 30, Klasična 40 ali Dolga 48 polj.</li>
    <li><strong>OPEN runda</strong>: ugibajo vsi. Če ugane aktivna ekipa, dobi 6 polj. Če ugane druga ekipa, dobi 4 polja, aktivna pa 2.</li>
    <li><strong>Izbijanje</strong> lahko pred igro vključiš ali izključiš. Ko je vključeno, uspešen običajni premik na nasprotnikovo polje nasprotnika pomakne eno polje nazaj.</li>
    <li><strong>Zmaga</strong>: prva ekipa, ki doseže ali preseže cilj, zmaga.</li>
@@ -98,6 +99,15 @@ function renderSetup(app){
       <input maxlength="40" autocomplete="off" aria-label="Ime ekipe ${i+1}" value="${esc(t.name)}" oninput="renameTeam(${i},this.value)">
      </div>`).join('')}
    </div>
+   <label>Dolžina igre
+    <select onchange="changeGameLength(this.value)">
+     ${[
+       {value:30,label:'Hitra · 30 polj'},
+       {value:40,label:'Klasična · 40 polj'},
+       {value:48,label:'Dolga · 48 polj'}
+     ].map(o=>`<option value="${o.value}" ${state.gameLength===o.value?'selected':''}>${o.label}</option>`).join('')}
+    </select>
+   </label>
    <div class="grid2">
     <label>Čas runde
      <select onchange="state.duration=Number(this.value);save()">
@@ -111,7 +121,7 @@ function renderSetup(app){
      </select>
     </label>
    </div>
-   <div class="notice"><strong>3 / 4 / 5</strong> izbereš pred vsako rundo. Plošča ima vedno 48 igralnih polj.</div>
+   <div class="notice"><strong>${gameLengthLabel()} · ${activeBoardFields()} polj.</strong> Težavnost 3 / 4 / 5 izbereš pred vsako rundo.</div>
    <button class="primary" onclick="beginGame()">ZAČNI IGRO</button>
   </div>
  </section>`;
@@ -120,6 +130,13 @@ function changeTeamCount(v){
  const n=Math.min(4,Math.max(2,Number(v)||2));
  while(state.teams.length<n)state.teams.push({name:`Ekipa ${state.teams.length+1}`,pos:0});
  state.teams=state.teams.slice(0,n);save();render();
+}
+function changeGameLength(v){
+ const n=Number(v);
+ if(!VALID_GAME_LENGTHS.has(n))return;
+ state.gameLength=n;
+ state.teams.forEach(t=>t.pos=clamp(t.pos,0,finishPosition()));
+ save();render();
 }
 function renameTeam(i,v){state.teams[i].name=String(v).trim().slice(0,40)||`Ekipa ${i+1}`;save()}
 function resetRoundData(){
@@ -135,6 +152,9 @@ function resetRoundData(){
  state.lastMove=null;
  state.winner=null;
  moveAnimations=[];
+ moveVisualPositions=null;
+ moveAnimationRunning=false;
+ moveAnimationHighlight=null;
 }
 function beginGame(){
  pendingResumeScreen=null;

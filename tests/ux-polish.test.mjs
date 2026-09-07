@@ -12,8 +12,9 @@ function createContext(){
     JSON,
     setInterval: () => 1,
     clearInterval: () => {},
-    setTimeout: (fn) => { fn(); return 1; },
+    setTimeout: () => 1,
     clearTimeout: () => {},
+    requestAnimationFrame: () => 1,
     confirm: () => true,
     localStorage: {
       getItem: (key) => storage.get(key) ?? null,
@@ -22,10 +23,11 @@ function createContext(){
     },
     navigator: {},
     document: { getElementById: () => null },
-    window: {},
+    window: { innerHeight: 800, addEventListener: () => {} },
   });
-  context.window = context;
-  for (const file of ['www/app/core.js','www/app/home-setup.js','www/app/round.js','www/app/result.js']) {
+  context.window.window = context.window;
+  context.window.Capacitor = undefined;
+  for (const file of ['www/app/core.js','www/app/home-setup.js','www/app/board.js','www/app/round.js','www/app/result.js']) {
     vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
   }
   return context;
@@ -50,12 +52,12 @@ test('settings screen does not replace an unfinished game snapshot', () => {
   assert.equal(screen, 'board');
 });
 
-test('replay keeps teams and preferences but resets gameplay', () => {
+test('replay keeps teams and preferences including game length but resets gameplay', () => {
   const ctx = createContext();
   const result = vm.runInContext(`
     state=freshState();
     state.teams=[{name:'Mavrice',pos:22},{name:'Volkovi',pos:17}];
-    state.duration=90;state.bumping=false;state.sound=false;state.vibration=false;
+    state.duration=90;state.gameLength=30;state.bumping=false;state.sound=false;state.vibration=false;
     state.used={'3:RAZLOŽI':['semafor']};state.winner=0;state.lastMove='x';
     replaySameTeams();
     JSON.stringify(state);
@@ -63,6 +65,7 @@ test('replay keeps teams and preferences but resets gameplay', () => {
   const state = JSON.parse(result);
   assert.deepEqual(state.teams, [{name:'Mavrice',pos:0},{name:'Volkovi',pos:0}]);
   assert.equal(state.duration, 90);
+  assert.equal(state.gameLength, 30);
   assert.equal(state.bumping, false);
   assert.equal(state.sound, false);
   assert.equal(state.vibration, false);
@@ -84,4 +87,48 @@ test('challenge starts with the secret term hidden behind hold control', () => {
   assert.match(html, /id="secretWord" hidden/);
   assert.match(html, /PRITISNI IN DRŽI ZA POJEM/);
   assert.match(html, /ZAČNI RUNDO/);
+});
+
+test('game length normalizes and caps movement at the selected finish', () => {
+  const ctx = createContext();
+  const normalized = JSON.parse(vm.runInContext(`JSON.stringify(normalizeState({gameLength:30,teams:[{name:'A',pos:99},{name:'B',pos:0}]}))`,ctx));
+  assert.equal(normalized.gameLength,30);
+  assert.equal(normalized.teams[0].pos,31);
+  const result = JSON.parse(vm.runInContext(`
+    state=freshState();state.gameLength=30;state.teams=[{name:'A',pos:28},{name:'B',pos:0}];
+    JSON.stringify(applyMove(0,5,true));
+  `,ctx));
+  assert.equal(result.pos,31);
+  assert.equal(result.winner,true);
+});
+
+test('board geometry supports 30, 40 and 48 field games', () => {
+  const ctx = createContext();
+  const rowCounts = JSON.parse(vm.runInContext(`
+    JSON.stringify([30,40,48].map(gameLength=>{state=freshState();state.gameLength=gameLength;return logicalBoardRows().length;}))
+  `,ctx));
+  assert.deepEqual(rowCounts,[7,9,10]);
+});
+
+test('viewport keeps the rearmost player on the lowest visible row', () => {
+  const ctx = createContext();
+  const indexes = JSON.parse(vm.runInContext(`
+    state=freshState();state.gameLength=48;JSON.stringify(visibleBoardRowIndexes([12,18],5))
+  `,ctx));
+  assert.equal(indexes.at(-1),2);
+});
+
+test('movement queue describes every intermediate field', () => {
+  const ctx = createContext();
+  const frames = JSON.parse(vm.runInContext(`
+    state=freshState();state.teams=[{name:'A',pos:2},{name:'B',pos:0}];
+    const result=applyMove(0,4,true);queueMoveAnimation(0,result);prepareMoveAnimation();JSON.stringify(moveAnimationFrames)
+  `,ctx));
+  assert.deepEqual(frames.map(f=>f.pos),[3,4,5,6]);
+});
+
+test('board layout no longer pushes the turn card to the bottom', () => {
+  const css=fs.readFileSync('www/board-viewport.css','utf8');
+  assert.doesNotMatch(css,/\.turnCard\{[^}]*margin-top\s*:\s*auto/);
+  assert.match(css,/\.turnCard\{[^}]*margin\s*:\s*0/);
 });

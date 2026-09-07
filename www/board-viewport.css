@@ -4,11 +4,14 @@
   overflow:hidden;
   padding:calc(8px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
 }
-.gameBoardScreen{height:100%;min-height:0;display:flex;flex-direction:column;gap:8px}
+.gameBoardScreen{height:100%;min-height:0;display:flex;flex-direction:column;gap:8px;overflow:hidden}
 .gameBoardApp .topbar{margin:0;min-height:42px;flex:0 0 auto}
 .gameBoardApp .logo{font-size:26px}
 .gameBoardApp .topbar button{min-height:38px;padding:8px 12px}
-.gameBoardApp .scoreRow{flex:0 0 auto;gap:6px;overflow:hidden;padding:2px}
+.gameBoardApp .scoreRow{flex:0 0 auto;display:grid;gap:6px;overflow:hidden;padding:2px}
+.gameBoardApp .scoreRow.teams-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.gameBoardApp .scoreRow.teams-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.gameBoardApp .scoreRow.teams-4{grid-template-columns:repeat(2,minmax(0,1fr))}
 .gameBoardApp .score{min-width:0;padding:8px 9px;border-radius:14px;display:flex;align-items:center;justify-content:space-between;gap:5px;overflow:hidden}
 .gameBoardApp .score strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gameBoardApp .score span{font-size:11px;white-space:nowrap;flex:0 0 auto}
@@ -26,7 +29,8 @@
 .boardViewportCard .pawn{width:23px;height:23px;font-size:10px}
 .boardViewportCard .modeLegend{justify-content:center;margin-top:6px;gap:7px}
 .boardViewportCard .legendItem{font-size:10px}
-.turnCard{flex:0 0 auto;margin:0;margin-top:auto;padding:11px 12px;border-radius:18px}
+.boardSpacer{visibility:hidden;pointer-events:none;border-color:transparent!important;background:transparent!important;box-shadow:none!important}
+.turnCard{flex:0 0 auto;margin:0;padding:11px 12px;border-radius:18px}
 .turnSummary{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin-bottom:9px;text-align:left}
 .turnSummary>div:first-child{min-width:0}
 .turnLabel{display:block;color:var(--muted);font-size:11px;font-weight:800;margin-bottom:2px}
@@ -39,7 +43,7 @@
 .fullMapHeader strong{font-size:18px}
 .fullMapEyebrow{font-size:10px;color:var(--muted);font-weight:900;letter-spacing:.09em}
 .fullMapBoard{flex:1;min-height:0}
-.fullMapBoard .board{height:100%;display:grid;grid-template-rows:repeat(10,minmax(0,1fr));gap:3px}
+.fullMapBoard .board{height:100%;display:grid;grid-template-rows:repeat(var(--board-row-count,10),minmax(0,1fr));gap:3px}
 .fullMapBoard .boardRow{min-height:0;gap:3px}
 .fullMapBoard .cell{height:100%;min-height:0;border-radius:7px;padding:2px;grid-template-rows:auto 1fr auto}
 .fullMapBoard .cell small{font-size:8px}
@@ -57,11 +61,17 @@
  .gameBoardApp .score{padding:6px 7px}
  .boardViewportCard{padding:7px}
  .boardToolbar{height:29px;margin-bottom:5px}
- .boardViewportCard .cell{min-height:46px}
+ .boardViewportCard .cell{min-height:44px}
  .turnCard{padding:8px 9px}
  .turnSummary{margin-bottom:6px}
  .turnSummary strong{font-size:18px}
  .turnAction{min-height:44px;padding:9px 14px}
+}
+@media(max-width:420px){
+ .gameBoardApp .scoreRow.teams-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .gameBoardApp .scoreRow.teams-3 .score{padding-inline:6px}
+ .gameBoardApp .scoreRow.teams-3 .score strong{font-size:10px}
+ .gameBoardApp .scoreRow.teams-3 .score span{font-size:9px}
 }
 @media(max-width:360px){
  .gameBoardApp .score strong{font-size:11px}
