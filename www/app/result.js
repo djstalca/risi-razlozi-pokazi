@@ -41,6 +41,15 @@ function applyMove(idx,points,allowBump){
  }
  return {old,pos:team.pos,bumped,winner:team.pos>=FINISH};
 }
+function queueMoveAnimation(idx,result){
+ moveAnimations.push({
+  team:idx,
+  from:result.old,
+  pos:result.pos,
+  bumped:result.bumped.slice(),
+  createdAt:Date.now()
+ });
+}
 function announceMove(idx,points,result){
  let text=`${state.teams[idx].name}: +${points} polj.`;
  if(result.bumped.length){
@@ -49,22 +58,28 @@ function announceMove(idx,points,result){
  state.lastMove=text;
 }
 function resolveNormal(success){
+ moveAnimations=[];
  if(!success){nextTurn();return}
  const result=applyMove(state.current,state.challenge.difficulty,true);
+ queueMoveAnimation(state.current,result);
  announceMove(state.current,state.challenge.difficulty,result);
  if(result.winner){finishGame(state.current);return}
  nextTurn();
 }
 function resolveOpen(idx){
+ moveAnimations=[];
  if(idx<0){state.lastMove='OPEN runda: nihče ni uganil.';nextTurn();return}
  const active=state.current;
  if(idx===active){
   const result=applyMove(active,6,true);
+  queueMoveAnimation(active,result);
   announceMove(active,6,result);
   if(result.winner){finishGame(active);return}
  }else{
   const guesserResult=applyMove(idx,4,false);
   const activeResult=applyMove(active,2,false);
+  queueMoveAnimation(idx,guesserResult);
+  queueMoveAnimation(active,activeResult);
   state.lastMove=`OPEN: ${state.teams[idx].name} +4, ${state.teams[active].name} +2. Izbijanje se pri tem premiku ne uporabi.`;
   if(guesserResult.winner){finishGame(idx);return}
   if(activeResult.winner){finishGame(active);return}
@@ -88,7 +103,10 @@ function renderWinner(app){
   <div class="stack" style="text-align:left;margin:24px 0">
    ${ranking.map((t,i)=>`<div class="score"><strong>${i+1}. ${esc(t.name)}</strong><span>${t.pos>=FINISH?'CILJ':`${t.pos} / ${BOARD_FIELDS}`}</span></div>`).join('')}
   </div>
-  <button class="primary" style="width:100%" onclick="startSetup()">IGRAJ ZNOVA</button>
+  <div class="stack">
+   <button class="primary" style="width:100%" onclick="replaySameTeams()">PONOVI Z ISTIMI EKIPAMI</button>
+   <button class="secondary" style="width:100%" onclick="editCurrentSetup()">SPREMENI NASTAVITVE</button>
+  </div>
  </section>`;
 }
-function resetConfirm(){if(confirm('Začnem novo igro? Trenutna igra bo izbrisana.'))startSetup()}
+function resetConfirm(){if(confirm('Začnem novo igro? Trenutna igra bo izbrisana.'))newGameSetup()}
