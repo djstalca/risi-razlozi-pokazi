@@ -45,6 +45,7 @@ async function setupNativeIntegration(){
     state.screen='home';save();render();return;
    }
    if(state.screen==='board'){
+    if(typeof fullMapOpen!=='undefined'&&fullMapOpen){closeFullMap();return;}
     pendingResumeScreen='board';state.screen='home';save();render();return;
    }
    if(state.screen==='timer'||state.screen==='draw'){

@@ -12,6 +12,8 @@ function createGameContext(){
     JSON,
     setInterval: () => 1,
     clearInterval: () => {},
+    setTimeout: (fn) => { fn(); return 1; },
+    clearTimeout: () => {},
     localStorage: {
       getItem: (key) => storage.get(key) ?? null,
       setItem: (key, value) => storage.set(key, value),
@@ -22,7 +24,9 @@ function createGameContext(){
     navigator: {},
   });
   context.window = context;
+  context.innerHeight = 900;
   vm.runInContext(fs.readFileSync('www/app/core.js', 'utf8'), context, { filename: 'core.js' });
+  vm.runInContext(fs.readFileSync('www/app/board.js', 'utf8'), context, { filename: 'board.js' });
   vm.runInContext(fs.readFileSync('www/app/result.js', 'utf8'), context, { filename: 'result.js' });
   return context;
 }
@@ -36,6 +40,20 @@ test('board mode cycles explain/draw/act and has 48 playable fields', () => {
   assert.equal(vm.runInContext('modeForPosition(2)', ctx), 'NARIŠI');
   assert.equal(vm.runInContext('modeForPosition(3)', ctx), 'POKAŽI');
   assert.equal(vm.runInContext('modeForPosition(48)', ctx), 'POKAŽI');
+});
+
+test('compact board keeps the last team on the lowest visible row', () => {
+  const ctx = createGameContext();
+  assert.deepEqual(Array.from(vm.runInContext('visibleBoardRowIndexes([0,0],5)', ctx)), [4,3,2,1,0]);
+  assert.deepEqual(Array.from(vm.runInContext('visibleBoardRowIndexes([12,30],5)', ctx)), [6,5,4,3,2]);
+  assert.deepEqual(Array.from(vm.runInContext('visibleBoardRowIndexes([41,45],5)', ctx)), [9,8]);
+  assert.deepEqual(Array.from(vm.runInContext('visibleBoardRowIndexes([48,49],5)', ctx)), [9]);
+});
+
+test('small screens show four board rows while normal phones show five', () => {
+  const ctx = createGameContext();
+  assert.equal(vm.runInContext('innerHeight=700; desiredBoardViewportRows()', ctx), 4);
+  assert.equal(vm.runInContext('innerHeight=900; desiredBoardViewportRows()', ctx), 5);
 });
 
 test('normal move bumps opponent back one field when enabled', () => {
