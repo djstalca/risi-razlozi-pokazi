@@ -1,9 +1,37 @@
+let canvasResizeTimer=null;
+
+function configureCanvasContext(c){
+ const dpr=Math.max(1,window.devicePixelRatio||1);
+ const ctx=c.getContext('2d');
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ ctx.lineWidth=5;
+ ctx.lineCap='round';
+ ctx.lineJoin='round';
+ ctx.strokeStyle='#111';
+ return {ctx,dpr};
+}
+function resizeCanvasPreserve(){
+ const c=document.getElementById('drawCanvas');if(!c)return;
+ const old=document.createElement('canvas');
+ old.width=c.width;old.height=c.height;
+ if(old.width&&old.height)old.getContext('2d').drawImage(c,0,0);
+ const rect=c.getBoundingClientRect(),dpr=Math.max(1,window.devicePixelRatio||1);
+ const nextW=Math.max(1,Math.floor(rect.width*dpr)),nextH=Math.max(1,Math.floor(rect.height*dpr));
+ if(nextW===c.width&&nextH===c.height)return;
+ c.width=nextW;c.height=nextH;
+ const {ctx}=configureCanvasContext(c);
+ if(old.width&&old.height){
+  ctx.save();
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.drawImage(old,0,0,old.width,old.height,0,0,c.width,c.height);
+  ctx.restore();
+  configureCanvasContext(c);
+ }
+}
 function initCanvas(){
  const c=document.getElementById('drawCanvas');if(!c)return;
- const ctx=c.getContext('2d'),dpr=Math.max(1,window.devicePixelRatio||1);
- const rect=c.getBoundingClientRect();
- c.width=Math.max(1,Math.floor(rect.width*dpr));c.height=Math.max(1,Math.floor(rect.height*dpr));
- ctx.setTransform(dpr,0,0,dpr,0,0);ctx.lineWidth=5;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#111';
+ resizeCanvasPreserve();
+ const ctx=c.getContext('2d');
  canvasHistory=[];
  let drawing=false;
  const point=e=>{const r=c.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
@@ -22,12 +50,14 @@ function clearCanvas(){
  const c=document.getElementById('drawCanvas');if(!c)return;
  canvasHistory.push(c.toDataURL());const ctx=c.getContext('2d');
  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,c.width,c.height);ctx.restore();
+ configureCanvasContext(c);
 }
 function undoCanvas(){
  const c=document.getElementById('drawCanvas');if(!c||!canvasHistory.length)return;
  const data=canvasHistory.pop(),img=new Image();
  img.onload=()=>{
   const ctx=c.getContext('2d');ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);ctx.restore();
+  configureCanvasContext(c);
  };
  img.src=data;
 }
@@ -41,7 +71,7 @@ async function setupNativeIntegration(){
     if(confirm('Zaprem igro?'))await appPlugin.exitApp();
     return;
    }
-   if(state.screen==='rules'||state.screen==='setup'){
+   if(state.screen==='rules'||state.screen==='settings'||state.screen==='setup'){
     state.screen='home';save();render();return;
    }
    if(state.screen==='board'){
@@ -70,6 +100,11 @@ async function setupNativeIntegration(){
 
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
 window.addEventListener('pagehide',save);
+window.addEventListener('resize',()=>{
+ if(state.screen!=='draw')return;
+ clearTimeout(canvasResizeTimer);
+ canvasResizeTimer=setTimeout(resizeCanvasPreserve,120);
+});
 
 async function bootstrapApp(){
  await hydrateNativeState();
