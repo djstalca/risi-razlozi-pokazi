@@ -33,23 +33,59 @@ function chooseDifficulty(diff){
  state.challenge={...pickTerm(diff,mode),mode};
  state.screen='challenge';save();render();
 }
+function revealTerm(show,event){
+ const word=document.getElementById('secretWord');
+ const button=document.getElementById('revealTermButton');
+ if(!word||!button)return;
+ if(show&&event?.pointerId!==undefined){
+  try{button.setPointerCapture(event.pointerId)}catch(e){}
+ }
+ word.hidden=!show;
+ button.classList.toggle('holding',show);
+ button.setAttribute('aria-pressed',show?'true':'false');
+ button.textContent=show?'SPUSTI, DA SKRIJEŠ POJEM':'PRITISNI IN DRŽI ZA POJEM';
+}
+function termRevealKey(event,show){
+ if(![' ','Enter'].includes(event.key))return;
+ event.preventDefault();
+ revealTerm(show,event);
+}
 function renderChallenge(app){
  const c=state.challenge,meta=modeMeta(c.mode);
  app.innerHTML=`
  ${topbar(state.openRound?`<span class="badge openBadge">OPEN RUNDA</span>`:'')}
- <section class="card center">
+ <section class="card center challengeCard">
   <div class="mode">${meta.icon} ${c.mode}</div>
   ${state.openRound?`<div class="badge openBadge">UGIBAJO VSE EKIPE</div>`:''}
-  <div class="word">${esc(c.text)}</div>
+  <div class="secretTermBox">
+   <div class="secretHint">Telefon naj gleda samo podajalec.</div>
+   <div class="word secretWord" id="secretWord" hidden aria-live="polite">${esc(c.text)}</div>
+   <button
+    class="secondary revealTermButton"
+    id="revealTermButton"
+    aria-pressed="false"
+    oncontextmenu="return false"
+    onpointerdown="revealTerm(true,event)"
+    onpointerup="revealTerm(false,event)"
+    onpointercancel="revealTerm(false,event)"
+    onpointerleave="revealTerm(false,event)"
+    onkeydown="termRevealKey(event,true)"
+    onkeyup="termRevealKey(event,false)"
+   >PRITISNI IN DRŽI ZA POJEM</button>
+  </div>
   <div class="badge">${difficultyLabel(c.difficulty)} · ${c.difficulty} ${c.difficulty===5?'TOČK':'TOČKE'}</div>
   <p class="muted">${meta.help}</p>
-  <div class="notice"><strong>Zapomni si pojem.</strong> Zaslon nato skrij pred ostalimi in začni rundo.</div>
-  <button class="primary" style="width:100%;margin-top:14px" onclick="startRound()">SKRIJ IN ZAČNI</button>
+  <div class="notice"><strong>Zapomni si pojem.</strong> Ko spustiš gumb, se pojem sam skrije.</div>
+  <button class="primary" style="width:100%;margin-top:14px" onclick="startRound()">ZAČNI RUNDO</button>
  </section>`;
 }
 
-function initAudio(){try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume()}catch(e){}}
+function initAudio(){
+ if(!state.sound)return;
+ try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume()}catch(e){}
+}
 function beep(freq=760,duration=.07){
+ if(!state.sound)return;
  try{
   if(!audioCtx)return;
   const o=audioCtx.createOscillator(),g=audioCtx.createGain();
@@ -97,10 +133,10 @@ function tick(){
  if(timer){timer.textContent=remaining;timer.classList.toggle('low',remaining<=10)}
  if(remaining!==lastBeepSecond&&(remaining===10||(remaining<=5&&remaining>0))){
   lastBeepSecond=remaining;beep(remaining===10?650:820,.06);
-  if(navigator.vibrate&&remaining<=3)navigator.vibrate(35);
+  if(remaining<=3)safeVibrate(35);
  }
  if(remaining<=0){
-  clearInterval(timerHandle);beep(420,.16);if(navigator.vibrate)navigator.vibrate([160,80,160]);
+  clearInterval(timerHandle);beep(420,.16);safeVibrate([160,80,160]);
   state.screen='result';state.timerEnd=null;save();render();
  }
 }
