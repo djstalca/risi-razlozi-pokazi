@@ -29,17 +29,22 @@ function renderResult(app){
  }
 }
 function applyMove(idx,points,allowBump){
+ const finish=finishPosition();
  const team=state.teams[idx],old=team.pos;
- team.pos=Math.min(FINISH,team.pos+points);
+ team.pos=Math.min(finish,team.pos+points);
  const bumped=[];
- if(state.bumping&&allowBump&&team.pos>0&&team.pos<FINISH){
+ const bumpedDetails=[];
+ if(state.bumping&&allowBump&&team.pos>0&&team.pos<finish){
   state.teams.forEach((other,j)=>{
    if(j!==idx&&other.pos===team.pos){
-    other.pos=Math.max(0,other.pos-1);bumped.push(j);
+    const from=other.pos;
+    other.pos=Math.max(0,other.pos-1);
+    bumped.push(j);
+    bumpedDetails.push({team:j,from,pos:other.pos});
    }
   });
  }
- return {old,pos:team.pos,bumped,winner:team.pos>=FINISH};
+ return {old,pos:team.pos,bumped,bumpedDetails,winner:team.pos>=finish};
 }
 function queueMoveAnimation(idx,result){
  moveAnimations.push({
@@ -47,6 +52,7 @@ function queueMoveAnimation(idx,result){
   from:result.old,
   pos:result.pos,
   bumped:result.bumped.slice(),
+  bumpedDetails:result.bumpedDetails.map(b=>({...b})),
   createdAt:Date.now()
  });
 }
@@ -57,13 +63,19 @@ function announceMove(idx,points,result){
  }
  state.lastMove=text;
 }
+function showWinningMove(idx){
+ state.winner=idx;
+ state.screen='board';
+ save();render();
+}
 function resolveNormal(success){
  moveAnimations=[];
  if(!success){nextTurn();return}
- const result=applyMove(state.current,state.challenge.difficulty,true);
- queueMoveAnimation(state.current,result);
- announceMove(state.current,state.challenge.difficulty,result);
- if(result.winner){finishGame(state.current);return}
+ const mover=state.current;
+ const result=applyMove(mover,state.challenge.difficulty,true);
+ queueMoveAnimation(mover,result);
+ announceMove(mover,state.challenge.difficulty,result);
+ if(result.winner){showWinningMove(mover);return}
  nextTurn();
 }
 function resolveOpen(idx){
@@ -74,15 +86,15 @@ function resolveOpen(idx){
   const result=applyMove(active,6,true);
   queueMoveAnimation(active,result);
   announceMove(active,6,result);
-  if(result.winner){finishGame(active);return}
+  if(result.winner){showWinningMove(active);return}
  }else{
   const guesserResult=applyMove(idx,4,false);
   const activeResult=applyMove(active,2,false);
   queueMoveAnimation(idx,guesserResult);
   queueMoveAnimation(active,activeResult);
   state.lastMove=`OPEN: ${state.teams[idx].name} +4, ${state.teams[active].name} +2. Izbijanje se pri tem premiku ne uporabi.`;
-  if(guesserResult.winner){finishGame(idx);return}
-  if(activeResult.winner){finishGame(active);return}
+  if(guesserResult.winner){showWinningMove(idx);return}
+  if(activeResult.winner){showWinningMove(active);return}
  }
  nextTurn();
 }
@@ -94,6 +106,7 @@ function nextTurn(){
 function finishGame(idx){state.winner=idx;state.screen='winner';save();render()}
 function renderWinner(app){
  const ranking=state.teams.map((t,i)=>({...t,i})).sort((a,b)=>b.pos-a.pos);
+ const finish=finishPosition();
  app.innerHTML=`
  ${topbar()}
  <section class="card center hero">
@@ -101,7 +114,7 @@ function renderWinner(app){
   <div class="badge">ZMAGOVALEC</div>
   <h1 style="font-size:clamp(38px,10vw,70px);margin:16px 0">${esc(state.teams[state.winner].name)}</h1>
   <div class="stack" style="text-align:left;margin:24px 0">
-   ${ranking.map((t,i)=>`<div class="score"><strong>${i+1}. ${esc(t.name)}</strong><span>${t.pos>=FINISH?'CILJ':`${t.pos} / ${BOARD_FIELDS}`}</span></div>`).join('')}
+   ${ranking.map((t,i)=>`<div class="score"><strong>${i+1}. ${esc(t.name)}</strong><span>${t.pos>=finish?'CILJ':`${t.pos} / ${activeBoardFields()}`}</span></div>`).join('')}
   </div>
   <div class="stack">
    <button class="primary" style="width:100%" onclick="replaySameTeams()">PONOVI Z ISTIMI EKIPAMI</button>

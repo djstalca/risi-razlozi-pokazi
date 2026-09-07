@@ -2,20 +2,32 @@ let fullMapOpen=false;
 let lastBoardViewportRowCount=null;
 let boardResizeTimer=null;
 let moveAnimationTimer=null;
+let moveAnimationFrames=[];
+let moveAnimationFrameIndex=0;
 
+function displayTeamPosition(i){
+ const visual=moveVisualPositions?.[i];
+ return Number.isFinite(visual)?visual:state.teams[i].pos;
+}
+function displayTeamPositions(){return state.teams.map((_,i)=>displayTeamPosition(i))}
 function scoresHtml(){
- return `<div class="scoreRow">${state.teams.map((t,i)=>`
-  <div class="score ${i===state.current?'active':''}" title="${esc(t.name)}">
-   <strong>${esc(t.name)}</strong><span>${t.pos===FINISH?'CILJ':`${t.pos}/${BOARD_FIELDS}`}</span>
-  </div>`).join('')}</div>`;
+ const finish=finishPosition();
+ return `<div class="scoreRow teams-${state.teams.length}">${state.teams.map((t,i)=>{
+  const pos=displayTeamPosition(i);
+  return `<div class="score ${i===state.current?'active':''}" title="${esc(t.name)}">
+   <strong>${esc(t.name)}</strong><span>${pos>=finish?'CILJ':`${Math.min(pos,activeBoardFields())}/${activeBoardFields()}`}</span>
+  </div>`;
+ }).join('')}</div>`;
 }
 function boardCell(pos){
- const isStart=pos===0,isFinish=pos===FINISH;
+ if(pos===null||pos===undefined)return `<div class="cell boardSpacer" aria-hidden="true"></div>`;
+ const finish=finishPosition();
+ const isStart=pos===0,isFinish=pos===finish;
  const mode=isFinish?null:modeForPosition(pos),meta=mode?modeMeta(mode):null;
- const occupants=state.teams.map((t,i)=>t.pos===pos?{team:t,index:i}:null).filter(Boolean);
- const currentHere=state.teams[state.current] && state.teams[state.current].pos===pos;
- const landingHere=moveAnimations.some(a=>a.pos===pos);
- const bumpedHere=moveAnimations.some(a=>a.bumped.some(idx=>state.teams[idx]?.pos===pos));
+ const occupants=state.teams.map((t,i)=>displayTeamPosition(i)===pos?{team:t,index:i}:null).filter(Boolean);
+ const currentHere=state.teams[state.current] && displayTeamPosition(state.current)===pos;
+ const landingHere=moveAnimationHighlight?.type==='move'&&moveAnimationHighlight.pos===pos;
+ const bumpedHere=moveAnimationHighlight?.type==='bump'&&moveAnimationHighlight.pos===pos;
  const cellClasses=[
   'cell',
   isStart?'start':'',
@@ -27,10 +39,10 @@ function boardCell(pos){
   bumpedHere?'moveBump':''
  ].filter(Boolean).join(' ');
  const pawns=occupants.length
-  ? `<div class="pawns ${occupants.length===1?'single':''}" aria-label="${occupants.map(o=>`${o.team.name} na polju ${pos===FINISH?'cilj':pos}`).join(', ')}">
+  ? `<div class="pawns ${occupants.length===1?'single':''}" aria-label="${occupants.map(o=>`${o.team.name} na polju ${isFinish?'cilj':pos}`).join(', ')}">
       ${occupants.map(o=>{
-       const moved=moveAnimations.some(a=>a.team===o.index&&a.pos===pos);
-       const bumped=moveAnimations.some(a=>a.bumped.includes(o.index));
+       const moved=moveAnimationHighlight?.type==='move'&&moveAnimationHighlight.team===o.index;
+       const bumped=moveAnimationHighlight?.type==='bump'&&moveAnimationHighlight.team===o.index;
        return `<span class="pawn ${o.index===state.current?'active':''} ${moved?'movedPawn':''} ${bumped?'bumpedPawn':''}" title="${esc(o.team.name)}" style="background:${teamColor(o.index)}">${o.index+1}</span>`;
       }).join('')}
      </div>`
@@ -43,30 +55,40 @@ function boardCell(pos){
   </div>`;
 }
 function logicalBoardRows(){
+ const positions=[0];
+ for(let pos=1;pos<=activeBoardFields();pos++)positions.push(pos);
+ positions.push(finishPosition());
  const rows=[];
- for(let start=0;start<50;start+=5){
-  let row=[start,start+1,start+2,start+3,start+4];
-  if((start/5)%2===1)row=row.reverse();
+ for(let i=0;i<positions.length;i+=5){
+  let row=positions.slice(i,i+5);
+  while(row.length<5)row.push(null);
+  if(rows.length%2===1)row=row.reverse();
   rows.push(row);
  }
  return rows;
 }
 function desiredBoardViewportRows(){
  const height=Number(window.innerHeight)||800;
- return height<740?4:5;
+ const teams=state.teams.length;
+ if(height<700)return 4;
+ if(teams>=4&&height<930)return 4;
+ if(teams===3&&height<840)return 4;
+ if(height<760)return 4;
+ return 5;
 }
 function visibleBoardRowIndexes(positions,desiredRows=5){
- const safePositions=(Array.isArray(positions)&&positions.length?positions:[0]).map(pos=>clamp(pos,0,FINISH));
+ const rows=logicalBoardRows();
+ const safePositions=(Array.isArray(positions)&&positions.length?positions:[0]).map(pos=>clamp(pos,0,finishPosition()));
  const lastPosition=Math.min(...safePositions);
- const bottomRow=Math.floor(lastPosition/5);
- const count=Math.max(1,Math.min(clamp(desiredRows,1,5),10-bottomRow));
+ const bottomRow=Math.min(rows.length-1,Math.floor(lastPosition/5));
+ const count=Math.max(1,Math.min(clamp(desiredRows,1,5),rows.length-bottomRow));
  const indexes=[];
  for(let row=bottomRow+count-1;row>=bottomRow;row--)indexes.push(row);
  return indexes;
 }
 function viewportBoardRows(desiredRows=desiredBoardViewportRows()){
  const rows=logicalBoardRows();
- return visibleBoardRowIndexes(state.teams.map(t=>t.pos),desiredRows).map(index=>rows[index]);
+ return visibleBoardRowIndexes(displayTeamPositions(),desiredRows).map(index=>rows[index]);
 }
 function fullBoardRows(){return logicalBoardRows().slice().reverse()}
 function modeLegendHtml(){
@@ -77,13 +99,13 @@ function modeLegendHtml(){
  </div>`;
 }
 function boardHtml(rows,{legend=true,full=false}={}){
- return `<div class="board ${full?'fullBoard':''}">${rows.map(r=>`<div class="boardRow">${r.map(boardCell).join('')}</div>`).join('')}</div>${legend?modeLegendHtml():''}`;
+ return `<div class="board ${full?'fullBoard':''}" style="--board-row-count:${rows.length}">${rows.map(r=>`<div class="boardRow">${r.map(boardCell).join('')}</div>`).join('')}</div>${legend?modeLegendHtml():''}`;
 }
 function fullMapHtml(){
  return `<div class="fullMapOverlay" id="fullMapOverlay" role="dialog" aria-modal="true" aria-labelledby="fullMapTitle" onclick="closeFullMapOnBackdrop(event)">
   <div class="fullMapPanel">
    <div class="fullMapHeader">
-    <div><div class="fullMapEyebrow">AKCIJA</div><strong id="fullMapTitle">Celotna mapa</strong></div>
+    <div><div class="fullMapEyebrow">AKCIJA · ${gameLengthLabel().toUpperCase()}</div><strong id="fullMapTitle">Celotna mapa · ${activeBoardFields()} polj</strong></div>
     <button class="secondary small" id="fullMapClose" onclick="closeFullMap()" aria-label="Zapri celotno mapo">Zapri</button>
    </div>
    <div class="fullMapBoard">${boardHtml(fullBoardRows(),{legend:false,full:true})}</div>
@@ -92,6 +114,7 @@ function fullMapHtml(){
  </div>`;
 }
 function openFullMap(){
+ if(moveAnimationRunning||moveAnimations.length)return;
  fullMapOpen=true;render();
  requestAnimationFrame(()=>document.getElementById('fullMapClose')?.focus());
 }
@@ -100,46 +123,97 @@ function closeFullMap(){
  requestAnimationFrame(()=>document.getElementById('openFullMap')?.focus());
 }
 function closeFullMapOnBackdrop(event){if(event.target?.id==='fullMapOverlay')closeFullMap()}
+
+function prepareMoveAnimation(){
+ if(moveAnimationRunning||moveVisualPositions||!moveAnimations.length)return;
+ moveVisualPositions=state.teams.map(t=>t.pos);
+ moveAnimationFrames=[];
+ moveAnimationFrameIndex=0;
+ for(const animation of moveAnimations){
+  moveVisualPositions[animation.team]=animation.from;
+  for(const bump of animation.bumpedDetails||[])moveVisualPositions[bump.team]=bump.from;
+ }
+ for(const animation of moveAnimations){
+  for(let pos=animation.from+1;pos<=animation.pos;pos++){
+   moveAnimationFrames.push({type:'move',team:animation.team,pos});
+  }
+  for(const bump of animation.bumpedDetails||[]){
+   moveAnimationFrames.push({type:'bump',team:bump.team,pos:bump.pos});
+  }
+ }
+}
+function startPreparedMoveAnimation(){
+ if(moveAnimationRunning||!moveAnimationFrames.length){
+  if(!moveAnimationFrames.length&&moveAnimations.length)finishMoveAnimation();
+  return;
+ }
+ moveAnimationRunning=true;
+ const step=()=>{
+  if(moveAnimationFrameIndex>=moveAnimationFrames.length){finishMoveAnimation();return;}
+  const frame=moveAnimationFrames[moveAnimationFrameIndex++];
+  moveVisualPositions[frame.team]=frame.pos;
+  moveAnimationHighlight=frame;
+  render();
+  const delay=frame.type==='bump'?220:120;
+  moveAnimationTimer=setTimeout(step,delay);
+ };
+ moveAnimationTimer=setTimeout(step,90);
+}
+function finishMoveAnimation(){
+ clearTimeout(moveAnimationTimer);
+ moveAnimationRunning=false;
+ moveAnimationFrames=[];
+ moveAnimationFrameIndex=0;
+ moveAnimationHighlight=null;
+ moveVisualPositions=null;
+ moveAnimations=[];
+ if(state.winner!==null&&state.teams[state.winner]?.pos>=finishPosition()){
+  state.screen='winner';save();render();return;
+ }
+ render();
+}
+
 function renderBoard(app){
  app.className='app gameBoardApp';
+ if(moveAnimations.length&&!moveAnimationRunning&&!moveVisualPositions)prepareMoveAnimation();
  const t=state.teams[state.current];
- const mode=modeForPosition(t.pos),meta=modeMeta(mode);
+ const mode=modeForPosition(displayTeamPosition(state.current)),meta=modeMeta(mode);
  const desiredRows=desiredBoardViewportRows();
  lastBoardViewportRowCount=desiredRows;
  const visibleRows=viewportBoardRows(desiredRows);
- const animating=moveAnimations.length>0;
+ const animating=moveAnimationRunning||moveAnimations.length>0||Boolean(moveVisualPositions);
  app.innerHTML=`<div class="gameBoardScreen">
- ${topbar(`<button class="secondary small" onclick="resetConfirm()">Nova igra</button>`)}
+ ${topbar(`<button class="secondary small" onclick="resetConfirm()" ${animating?'disabled':''}>Nova igra</button>`)}
  ${scoresHtml()}
  ${state.lastMove?`<div class="compactNotice">${esc(state.lastMove)}</div>`:''}
- <section class="card boardViewportCard ${animating?'boardArrive':''}">
+ <section class="card boardViewportCard">
   <div class="boardToolbar">
-   <span>Pot proti cilju</span>
-   <button class="secondary mapButton" id="openFullMap" onclick="openFullMap()" aria-label="Prikaži celotno igralno mapo">Celotna mapa</button>
+   <span>${gameLengthLabel()} · ${activeBoardFields()} polj</span>
+   <button class="secondary mapButton" id="openFullMap" onclick="openFullMap()" aria-label="Prikaži celotno igralno mapo" ${animating?'disabled':''}>Celotna mapa</button>
   </div>
   ${boardHtml(visibleRows)}
  </section>
  <section class="card turnCard">
   <div class="turnSummary">
-   <div><span class="turnLabel">Na potezi</span><strong>${esc(t.name)}</strong></div>
+   <div><span class="turnLabel">${animating?'Premik poteka':'Na potezi'}</span><strong>${esc(t.name)}</strong></div>
    <div class="badge">${meta.icon} ${mode}</div>
   </div>
-  <button class="primary turnAction" onclick="prepareRound()">IZBERI TEŽAVNOST</button>
+  <button class="primary turnAction" onclick="prepareRound()" ${animating?'disabled':''}>${animating?'PREMIK ...':'IZBERI TEŽAVNOST'}</button>
  </section>
  ${fullMapOpen?fullMapHtml():''}
  </div>`;
- if(animating){
-  clearTimeout(moveAnimationTimer);
-  moveAnimationTimer=setTimeout(()=>{moveAnimations=[]},850);
+ if(moveVisualPositions&&!moveAnimationRunning&&moveAnimationFrames.length){
+  requestAnimationFrame(startPreparedMoveAnimation);
  }
 }
 function prepareRound(){
+ if(moveAnimationRunning||moveAnimations.length)return;
  fullMapOpen=false;state.lastMove=null;state.roundDifficulty=null;state.challenge=null;state.openRound=false;state.screen='prep';save();render();
 }
 
 if(typeof window!=='undefined'&&window.addEventListener){
  window.addEventListener('resize',()=>{
-  if(state.screen!=='board'||fullMapOpen)return;
+  if(state.screen!=='board'||fullMapOpen||moveAnimationRunning)return;
   clearTimeout(boardResizeTimer);
   boardResizeTimer=setTimeout(()=>{
    const next=desiredBoardViewportRows();

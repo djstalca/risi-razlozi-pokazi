@@ -2,8 +2,8 @@ const MODES = ['RAZLOŽI','NARIŠI','POKAŽI'];
 const COLORS = ['var(--team1)','var(--team2)','var(--team3)','var(--team4)'];
 const STORAGE_KEY = 'risi-razlozi-pokazi-game-v1';
 const LEGACY_STORAGE_KEYS = ['akcija-game-v6'];
-const BOARD_FIELDS = 48;
-const FINISH = 49;
+const MAX_BOARD_FIELDS = 48;
+const VALID_GAME_LENGTHS = new Set([30,40,48]);
 const VALID_SCREENS = new Set(['home','rules','settings','setup','board','prep','challenge','timer','draw','result','winner']);
 const RESUMABLE_SCREENS = new Set(['board','prep','challenge','timer','draw','result','winner']);
 const PASSIVE_SCREENS = new Set(['home','rules','settings']);
@@ -15,6 +15,9 @@ let canvasHistory = [];
 let lastBeepSecond = null;
 let audioCtx = null;
 let moveAnimations = [];
+let moveVisualPositions = null;
+let moveAnimationRunning = false;
+let moveAnimationHighlight = null;
 
 function freshState(){
  return {
@@ -23,6 +26,7 @@ function freshState(){
   teams:[{name:'Ekipa 1',pos:0},{name:'Ekipa 2',pos:0}],
   current:0,
   duration:60,
+  gameLength:48,
   bumping:true,
   sound:true,
   vibration:true,
@@ -38,13 +42,21 @@ function freshState(){
  };
 }
 function clamp(n,min,max){return Math.min(max,Math.max(min,Number.isFinite(Number(n))?Number(n):min))}
+function activeBoardFields(){return VALID_GAME_LENGTHS.has(Number(state?.gameLength))?Number(state.gameLength):48}
+function finishPosition(){return activeBoardFields()+1}
+function gameLengthLabel(length=activeBoardFields()){
+ const n=Number(length);
+ return n===30?'Hitra':n===40?'Klasična':'Dolga';
+}
 function normalizeState(raw){
  const base=freshState();
  if(!raw||typeof raw!=='object')return base;
  const next={...base,...raw,version:1};
+ next.gameLength=VALID_GAME_LENGTHS.has(Number(raw.gameLength))?Number(raw.gameLength):48;
+ const finish=next.gameLength+1;
  next.teams=Array.isArray(raw.teams)?raw.teams.slice(0,4).map((t,i)=>({
   name:String(t?.name||`Ekipa ${i+1}`).trim().slice(0,40)||`Ekipa ${i+1}`,
-  pos:clamp(t?.pos,0,FINISH)
+  pos:clamp(t?.pos,0,finish)
  })):base.teams;
  while(next.teams.length<2)next.teams.push({name:`Ekipa ${next.teams.length+1}`,pos:0});
  next.current=clamp(raw.current,0,next.teams.length-1);
@@ -67,6 +79,7 @@ function normalizeState(raw){
   next.screen=next.challenge?'result':'board';
   next.timerEnd=null;next.remaining=null;
  }
+ if(next.winner!==null&&next.teams[next.winner]?.pos>=finish&&next.screen==='board')next.screen='winner';
  return next;
 }
 function readCachedState(){
