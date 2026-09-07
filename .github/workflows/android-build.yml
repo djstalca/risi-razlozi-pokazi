@@ -6,6 +6,16 @@ on:
     branches: [main]
     tags:
       - 'v*'
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'www/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - '.github/workflows/android-build.yml'
 
 permissions:
   contents: read
