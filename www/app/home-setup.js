@@ -1,13 +1,14 @@
 function renderHome(app){
  app.innerHTML=`
- ${topbar()}
- <section class="card hero">
-  <div class="badge">Družabna igra · Riši, razloži, pokaži</div>
-  <h1>AKCIJA</h1>
-  <p>Razloži. Nariši. Pokaži. Izberi 3, 4 ali 5 točk in pripelji svojo ekipo čez 48 igralnih polj do cilja.</p>
+ ${topbar(`<button class="secondary small" onclick="setScreen('settings')">Nastavitve</button>`)}
+ <section class="card hero homeHero">
+  <div class="badge">Slovenska družabna igra</div>
+  <div class="homeBrand">AKCIJA</div>
+  <h1>Riši, razloži, pokaži</h1>
+  <p>Izberi 3, 4 ali 5 točk in pripelji svojo ekipo čez 48 igralnih polj do cilja.</p>
   <div class="actions">
    ${pendingResumeScreen?`<button class="success" onclick="continueGame()">NADALJUJ IGRO</button>`:''}
-   <button class="primary" onclick="startSetup()">NOVA IGRA</button>
+   <button class="primary" onclick="newGameFromHome()">NOVA IGRA</button>
    <button class="secondary" onclick="setScreen('rules')">PRAVILA</button>
   </div>
  </section>
@@ -21,6 +22,21 @@ function continueGame(){
  if(!pendingResumeScreen)return;
  state.screen=pendingResumeScreen;pendingResumeScreen=null;save();render();
 }
+function userPreferences(){
+ return {duration:state.duration,bumping:state.bumping,sound:state.sound,vibration:state.vibration};
+}
+function newGameSetup(){
+ const prefs=userPreferences();
+ pendingResumeScreen=null;
+ state=freshState();
+ Object.assign(state,prefs);
+ state.screen='setup';
+ save();render();
+}
+function newGameFromHome(){
+ if(pendingResumeScreen&&!confirm('Začnem novo igro? Trenutna igra bo izbrisana.'))return;
+ newGameSetup();
+}
 function renderRules(app){
  app.innerHTML=`
  ${topbar(`<button class="secondary small" onclick="setScreen('home')">Nazaj</button>`)}
@@ -29,14 +45,40 @@ function renderRules(app){
   <ol class="ruleList">
    <li><strong>Način</strong> določa polje, na katerem stoji ekipa: razloži, nariši ali pokaži.</li>
    <li><strong>Pred vsako rundo</strong> izbereš 3, 4 ali 5 točk. Višja vrednost pomeni težji pojem.</li>
-   <li><strong>Pred začetkom</strong> si podajalec pojem zapomni in ga skrije. Nato začne teči čas.</li>
+   <li><strong>Pred začetkom</strong> podajalec pritisne in drži za prikaz pojma, si ga zapomni in nato začne rundo.</li>
    <li><strong>OPEN runda</strong>: ugibajo vsi. Če ugane aktivna ekipa, dobi 6 polj. Če ugane druga ekipa, dobi 4 polja, aktivna pa 2.</li>
    <li><strong>Izbijanje</strong> lahko pred igro vključiš ali izključiš. Ko je vključeno, uspešen običajni premik na nasprotnikovo polje nasprotnika pomakne eno polje nazaj.</li>
    <li><strong>Zmaga</strong>: prva ekipa, ki doseže ali preseže cilj, zmaga.</li>
   </ol>
  </section>`;
 }
-function startSetup(){pendingResumeScreen=null;state=freshState();state.screen='setup';save();render()}
+function renderSettings(app){
+ app.innerHTML=`
+ ${topbar(`<button class="secondary small" onclick="setScreen('home')">Nazaj</button>`)}
+ <section class="card">
+  <h2>Nastavitve</h2>
+  <div class="stack">
+   <label>Zvok odštevanja
+    <select onchange="state.sound=this.value==='on';save()">
+     <option value="on" ${state.sound?'selected':''}>Vključen</option>
+     <option value="off" ${!state.sound?'selected':''}>Izključen</option>
+    </select>
+   </label>
+   <label>Vibriranje
+    <select onchange="state.vibration=this.value==='on';save()">
+     <option value="on" ${state.vibration?'selected':''}>Vključeno</option>
+     <option value="off" ${!state.vibration?'selected':''}>Izključeno</option>
+    </select>
+   </label>
+   <label>Privzeti čas runde
+    <select onchange="state.duration=Number(this.value);save()">
+     ${[30,45,60,90].map(n=>`<option value="${n}" ${state.duration===n?'selected':''}>${n} s</option>`).join('')}
+    </select>
+   </label>
+   <div class="notice">Nastavitve se shranijo na tej napravi in veljajo tudi za naslednjo igro.</div>
+  </div>
+ </section>`;
+}
 
 function renderSetup(app){
  app.innerHTML=`
@@ -80,8 +122,32 @@ function changeTeamCount(v){
  state.teams=state.teams.slice(0,n);save();render();
 }
 function renameTeam(i,v){state.teams[i].name=String(v).trim().slice(0,40)||`Ekipa ${i+1}`;save()}
+function resetRoundData(){
+ state.current=0;
+ state.teams.forEach(t=>t.pos=0);
+ state.used={};
+ state.challenge=null;
+ state.roundDifficulty=null;
+ state.openRound=false;
+ state.openBag=[];
+ state.timerEnd=null;
+ state.remaining=null;
+ state.lastMove=null;
+ state.winner=null;
+ moveAnimations=[];
+}
 function beginGame(){
- pendingResumeScreen=null;state.current=0;state.teams.forEach(t=>t.pos=0);
- state.used={};state.challenge=null;state.openBag=[];state.lastMove=null;state.winner=null;
+ pendingResumeScreen=null;
+ resetRoundData();
  state.screen='board';save();render();
+}
+function replaySameTeams(){
+ pendingResumeScreen=null;
+ resetRoundData();
+ state.screen='board';save();render();
+}
+function editCurrentSetup(){
+ pendingResumeScreen=null;
+ resetRoundData();
+ state.screen='setup';save();render();
 }

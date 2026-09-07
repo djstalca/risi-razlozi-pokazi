@@ -4,8 +4,9 @@ const STORAGE_KEY = 'risi-razlozi-pokazi-game-v1';
 const LEGACY_STORAGE_KEYS = ['akcija-game-v6'];
 const BOARD_FIELDS = 48;
 const FINISH = 49;
-const VALID_SCREENS = new Set(['home','rules','setup','board','prep','challenge','timer','draw','result','winner']);
+const VALID_SCREENS = new Set(['home','rules','settings','setup','board','prep','challenge','timer','draw','result','winner']);
 const RESUMABLE_SCREENS = new Set(['board','prep','challenge','timer','draw','result','winner']);
+const PASSIVE_SCREENS = new Set(['home','rules','settings']);
 const VALID_DURATIONS = new Set([30,45,60,90]);
 
 let pendingResumeScreen = null;
@@ -13,6 +14,7 @@ let timerHandle = null;
 let canvasHistory = [];
 let lastBeepSecond = null;
 let audioCtx = null;
+let moveAnimations = [];
 
 function freshState(){
  return {
@@ -22,6 +24,8 @@ function freshState(){
   current:0,
   duration:60,
   bumping:true,
+  sound:true,
+  vibration:true,
   used:{},
   challenge:null,
   roundDifficulty:null,
@@ -46,6 +50,8 @@ function normalizeState(raw){
  next.current=clamp(raw.current,0,next.teams.length-1);
  next.duration=VALID_DURATIONS.has(Number(raw.duration))?Number(raw.duration):60;
  next.bumping=raw.bumping!==false;
+ next.sound=raw.sound!==false;
+ next.vibration=raw.vibration!==false;
  next.used=raw.used&&typeof raw.used==='object'&&!Array.isArray(raw.used)?raw.used:{};
  next.openBag=Array.isArray(raw.openBag)?raw.openBag.filter(v=>typeof v==='boolean').slice(0,6):[];
  next.openRound=Boolean(raw.openRound);
@@ -85,7 +91,7 @@ let state=prepareLoadedState(readCachedState()||freshState());
 
 function storageSnapshot(){
  const snapshot=JSON.parse(JSON.stringify(state));
- if(snapshot.screen==='home'&&pendingResumeScreen)snapshot.screen=pendingResumeScreen;
+ if(pendingResumeScreen&&PASSIVE_SCREENS.has(snapshot.screen))snapshot.screen=pendingResumeScreen;
  return snapshot;
 }
 function preferencesPlugin(){return window.Capacitor?.Plugins?.Preferences||null}
@@ -117,6 +123,10 @@ function modeMeta(mode){
 function difficultyLabel(d){return d===3?'LAHKA':d===4?'SREDNJA':'TEŽKA'}
 function topbar(extra=''){return `<div class="topbar"><div class="logo">AKCIJA</div>${extra}</div>`}
 function setScreen(screen){state.screen=screen;save();render()}
+function safeVibrate(pattern){
+ if(!state.vibration||!navigator.vibrate)return;
+ try{navigator.vibrate(pattern)}catch(e){}
+}
 
 function render(){
  clearInterval(timerHandle);
@@ -125,6 +135,7 @@ function render(){
  app.className=state.screen==='draw'?'':'app';
  if(state.screen==='home')return renderHome(app);
  if(state.screen==='rules')return renderRules(app);
+ if(state.screen==='settings')return renderSettings(app);
  if(state.screen==='setup')return renderSetup(app);
  if(state.screen==='board')return renderBoard(app);
  if(state.screen==='prep')return renderPrep(app);

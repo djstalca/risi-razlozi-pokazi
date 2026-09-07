@@ -1,6 +1,7 @@
 let fullMapOpen=false;
 let lastBoardViewportRowCount=null;
 let boardResizeTimer=null;
+let moveAnimationTimer=null;
 
 function scoresHtml(){
  return `<div class="scoreRow">${state.teams.map((t,i)=>`
@@ -13,17 +14,25 @@ function boardCell(pos){
  const mode=isFinish?null:modeForPosition(pos),meta=mode?modeMeta(mode):null;
  const occupants=state.teams.map((t,i)=>t.pos===pos?{team:t,index:i}:null).filter(Boolean);
  const currentHere=state.teams[state.current] && state.teams[state.current].pos===pos;
+ const landingHere=moveAnimations.some(a=>a.pos===pos);
+ const bumpedHere=moveAnimations.some(a=>a.bumped.some(idx=>state.teams[idx]?.pos===pos));
  const cellClasses=[
   'cell',
   isStart?'start':'',
   isFinish?'finish':'',
   meta?meta.cls:'',
   occupants.length?'occupied':'',
-  currentHere?'activeSpot':''
+  currentHere?'activeSpot':'',
+  landingHere?'moveLand':'',
+  bumpedHere?'moveBump':''
  ].filter(Boolean).join(' ');
  const pawns=occupants.length
   ? `<div class="pawns ${occupants.length===1?'single':''}" aria-label="${occupants.map(o=>`${o.team.name} na polju ${pos===FINISH?'cilj':pos}`).join(', ')}">
-      ${occupants.map(o=>`<span class="pawn ${o.index===state.current?'active':''}" title="${esc(o.team.name)}" style="background:${teamColor(o.index)}">${o.index+1}</span>`).join('')}
+      ${occupants.map(o=>{
+       const moved=moveAnimations.some(a=>a.team===o.index&&a.pos===pos);
+       const bumped=moveAnimations.some(a=>a.bumped.includes(o.index));
+       return `<span class="pawn ${o.index===state.current?'active':''} ${moved?'movedPawn':''} ${bumped?'bumpedPawn':''}" title="${esc(o.team.name)}" style="background:${teamColor(o.index)}">${o.index+1}</span>`;
+      }).join('')}
      </div>`
   : '';
  const label=isStart?'START':isFinish?'CILJ':pos;
@@ -98,11 +107,12 @@ function renderBoard(app){
  const desiredRows=desiredBoardViewportRows();
  lastBoardViewportRowCount=desiredRows;
  const visibleRows=viewportBoardRows(desiredRows);
+ const animating=moveAnimations.length>0;
  app.innerHTML=`<div class="gameBoardScreen">
  ${topbar(`<button class="secondary small" onclick="resetConfirm()">Nova igra</button>`)}
  ${scoresHtml()}
  ${state.lastMove?`<div class="compactNotice">${esc(state.lastMove)}</div>`:''}
- <section class="card boardViewportCard">
+ <section class="card boardViewportCard ${animating?'boardArrive':''}">
   <div class="boardToolbar">
    <span>Pot proti cilju</span>
    <button class="secondary mapButton" id="openFullMap" onclick="openFullMap()" aria-label="Prikaži celotno igralno mapo">Celotna mapa</button>
@@ -118,6 +128,10 @@ function renderBoard(app){
  </section>
  ${fullMapOpen?fullMapHtml():''}
  </div>`;
+ if(animating){
+  clearTimeout(moveAnimationTimer);
+  moveAnimationTimer=setTimeout(()=>{moveAnimations=[]},850);
+ }
 }
 function prepareRound(){
  fullMapOpen=false;state.lastMove=null;state.roundDifficulty=null;state.challenge=null;state.openRound=false;state.screen='prep';save();render();
