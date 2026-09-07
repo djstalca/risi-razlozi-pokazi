@@ -2,61 +2,99 @@
 
 **Slovenska družabna igra za 2–4 ekipe.** Igralci rišejo, razlagajo ali kažejo pojme, ekipa pa se premika po igralni poti.
 
-## Trenutno stanje
+## Igra
 
 - 450 ročno kuriranih slovenskih pojmov
 - 3 težavnosti
 - RAZLOŽI / NARIŠI / POKAŽI
 - OPEN runde
 - nastavljivo izbijanje nasprotnikov
-- risalna površina
-- lokalno shranjevanje igre
+- risanje neposredno na zaslon
+- jasne, oštevilčene figurice ekip
+- nadaljevanje prekinjene igre
+- lokalno shranjevanje stanja
 - brez uporabniškega računa, oglasov ali analitike
-- deluje brez internetne povezave
+- v1.0 brez Android INTERNET permissiona
 
 ## Android / Google Play
 
-Projekt je pripravljen za Capacitor 8.
-
-- App ID: `si.djstalca.risirazlozipokazi`
+- Package ID: `si.djstalca.risirazlozipokazi`
 - Display name: `Riši, razloži, pokaži`
+- Visual brand: `AKCIJA`
+- Version: `1.0.0` / code `1`
 - Capacitor: `8.5.1`
-- Android target SDK: `36`
-- Android min SDK: določi Capacitor 8 (24)
-- Node.js: 22+
+- Android min SDK: `24`
+- Android compile/target SDK: `36`
+- Node.js: `22+`
+- Java/JDK: `21`
 
-### Prvi Android setup
+Native Android projekt je **tracked v repozitoriju**. Po kloniranju ga ni treba ponovno ustvarjati.
+
+## Razvoj
 
 ```bash
-npm run android:init
+npm ci
+npm run check
+npm run android:sync
 npm run android:open
 ```
 
-`android:init` namesti odvisnosti, ustvari Android projekt, nastavi API 36, vključi `FLAG_KEEP_SCREEN_ON` in sinhronizira spletne datoteke.
+`android:sync` regenerira brand assets, sinhronizira Capacitor in ponovno uporabi produkcijske Android hardening nastavitve.
 
-### Po spremembah spletne igre
+## QA
+
+```bash
+npm run check
+npm run android:verify
+```
+
+`npm run check` preveri JS sintakso, kakovost/strukturo baze pojmov in avtomatske teste igralne logike.
+
+`npm run android:verify` zažene Android lint, teste in zgradi debug APK.
+
+Celoten ročni testni načrt: `docs/TEST_PLAN.md`.
+
+## Play Store release
+
+1. Nastavi svoj zasebni upload key po `docs/SIGNING.md`.
+2. Zaženi:
 
 ```bash
 npm run android:sync
-```
-
-### Release bundle
-
-Ko je nastavljen signing key:
-
-```bash
 npm run android:bundle
 ```
 
-AAB bo nato v `android/app/build/outputs/bundle/release/`.
+3. AAB bo v:
 
-## Git workflow
+```text
+android/app/build/outputs/bundle/release/app-release.aab
+```
 
-Predlagano:
-- `main` = stabilna izdaja
-- feature veje + PR za večje spremembe
-- tagi `v1.0.0`, `v1.1.0`, ...
+Play Console priprava:
+- `docs/PLAY_CONSOLE.md`
+- `docs/PLAY_STORE_LISTING.md`
+- `docs/DATA_SAFETY.md`
+- `docs/CONTENT_RATING.md`
+- `docs/PRIVACY_POLICY.md`
+- `docs/STORE_ASSETS.md`
+- `docs/RELEASE_CHECKLIST.md`
 
-## Zasebnost
+## Brand assets
 
-Aplikacija je zasnovana brez strežnika. Trenutno ne pošilja osebnih podatkov iz naprave. Glej `docs/PRIVACY_POLICY.md` in `docs/DATA_SAFETY.md`.
+```bash
+npm run assets:generate
+```
+
+Skripta reproducibilno pripravi Android ikone/splash vhodne datoteke ter Play Store 512×512 icon in 1024×500 feature graphic.
+
+## Varnost in zasebnost
+
+- ni login sistema,
+- ni strežnika,
+- ni analytics ali ad SDK-ja,
+- Android backup je izključen,
+- cleartext network promet je izključen,
+- INTERNET permission je odstranjen,
+- save game ostane lokalno na napravi.
+
+Realni signing ključi, gesla in Play Console credentials nikoli ne sodijo v GitHub.
