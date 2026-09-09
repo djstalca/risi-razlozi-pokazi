@@ -16,18 +16,18 @@
 .gameBoardApp .score strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gameBoardApp .score span{font-size:11px;white-space:nowrap;flex:0 0 auto}
 .compactNotice{flex:0 0 auto;border-left:3px solid var(--ok);background:#15271b;border-radius:0 9px 9px 0;padding:6px 9px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.boardViewportCard{flex:0 0 auto;margin:0;padding:10px;border-radius:18px}
-.boardToolbar{height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;font-size:12px;font-weight:850;color:var(--muted)}
+.boardViewportCard{flex:1 1 0;min-height:0;margin:0;padding:10px;border-radius:18px;display:flex;flex-direction:column}
+.boardToolbar{height:34px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;font-size:12px;font-weight:850;color:var(--muted)}
 .mapButton{min-height:32px;padding:5px 9px;border-radius:10px;font-size:12px}
-.boardViewportCard .board{gap:4px}
-.boardViewportCard .boardRow{gap:4px}
-.boardViewportCard .cell{min-height:clamp(48px,6.1dvh,58px);border-radius:9px;padding:3px}
+.boardViewportCard .board{flex:1 1 auto;min-height:0;display:grid;grid-template-rows:repeat(var(--board-row-count,5),minmax(0,1fr));gap:4px;overflow:hidden}
+.boardViewportCard .boardRow{min-height:0;height:100%;gap:4px}
+.boardViewportCard .cell{height:100%;min-height:0;border-radius:9px;padding:3px}
 .boardViewportCard .cell small{font-size:9px}
 .boardViewportCard .cell .cellMode{font-size:17px}
 .boardViewportCard .pawns{grid-template-columns:repeat(2,23px);gap:2px;padding:2px;min-height:23px;border-radius:9px}
 .boardViewportCard .pawns.single{grid-template-columns:23px}
 .boardViewportCard .pawn{width:23px;height:23px;font-size:10px}
-.boardViewportCard .modeLegend{justify-content:center;margin-top:6px;gap:7px}
+.boardViewportCard .modeLegend{flex:0 0 auto;justify-content:center;margin-top:6px;gap:7px}
 .boardViewportCard .legendItem{font-size:10px}
 .boardSpacer{visibility:hidden;pointer-events:none;border-color:transparent!important;background:transparent!important;box-shadow:none!important}
 .turnCard{flex:0 0 auto;margin:0;padding:11px 12px;border-radius:18px}
@@ -61,7 +61,7 @@
  .gameBoardApp .score{padding:6px 7px}
  .boardViewportCard{padding:7px}
  .boardToolbar{height:29px;margin-bottom:5px}
- .boardViewportCard .cell{min-height:44px}
+ .boardViewportCard .cell{min-height:0}
  .turnCard{padding:8px 9px}
  .turnSummary{margin-bottom:6px}
  .turnSummary strong{font-size:18px}
