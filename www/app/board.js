@@ -14,7 +14,8 @@ function scoresHtml(){
  const finish=finishPosition();
  return `<div class="scoreRow teams-${state.teams.length}">${state.teams.map((t,i)=>{
   const pos=displayTeamPosition(i);
-  return `<div class="score ${i===state.current?'active':''}" title="${esc(t.name)}">
+  const active=i===state.current;
+  return `<div class="score ${active?'active':''}" title="${esc(t.name)}" ${active?`style="--active-team-color:${teamColor(i)}"`:''}>
    <strong>${esc(t.name)}</strong><span>${pos>=finish?'CILJ':`${Math.min(pos,activeBoardFields())}/${activeBoardFields()}`}</span>
   </div>`;
  }).join('')}</div>`;
@@ -43,12 +44,12 @@ function boardCell(pos){
       ${occupants.map(o=>{
        const moved=moveAnimationHighlight?.type==='move'&&moveAnimationHighlight.team===o.index;
        const bumped=moveAnimationHighlight?.type==='bump'&&moveAnimationHighlight.team===o.index;
-       return `<span class="pawn ${o.index===state.current?'active':''} ${moved?'movedPawn':''} ${bumped?'bumpedPawn':''}" title="${esc(o.team.name)}" style="background:${teamColor(o.index)}">${o.index+1}</span>`;
+       return `<span class="pawn ${o.index===state.current?'active':''} ${moved?'movedPawn':''} ${bumped?'bumpedPawn':''}" title="${esc(o.team.name)}" style="background:${teamColor(o.index)};--active-team-color:${teamColor(o.index)}">${o.index+1}</span>`;
       }).join('')}
      </div>`
   : '';
  const label=isStart?'START':isFinish?'CILJ':pos;
- return `<div class="${cellClasses}">
+ return `<div class="${cellClasses}" ${currentHere?`style="--active-team-color:${teamColor(state.current)}"`:''}>
    <small>${label}</small>
    ${meta?`<span class="cellMode" aria-label="${mode}">${meta.icon}</span>`:''}
    ${pawns}
@@ -183,7 +184,7 @@ function renderBoard(app){
  const visibleRows=viewportBoardRows(desiredRows);
  const animating=moveAnimationRunning||moveAnimations.length>0||Boolean(moveVisualPositions);
  app.innerHTML=`<div class="gameBoardScreen">
- ${topbar(`<button class="secondary small" onclick="resetConfirm()" ${animating?'disabled':''}>Nova igra</button>`)}
+ ${gameTopbar(`<button class="secondary small" onclick="resetConfirm()" ${animating?'disabled':''}>Nova igra</button>`)}
  ${scoresHtml()}
  ${state.lastMove?`<div class="compactNotice">${esc(state.lastMove)}</div>`:''}
  <section class="card boardViewportCard">
@@ -193,7 +194,7 @@ function renderBoard(app){
   </div>
   ${boardHtml(visibleRows)}
  </section>
- <section class="card turnCard">
+ <section class="card turnCard" style="--active-team-color:${teamColor(state.current)}">
   <div class="turnSummary">
    <div><span class="turnLabel">${animating?'Premik poteka':'Na potezi'}</span><strong>${esc(t.name)}</strong></div>
    <div class="badge">${meta.icon} ${mode}</div>
@@ -208,6 +209,7 @@ function renderBoard(app){
 }
 function prepareRound(){
  if(moveAnimationRunning||moveAnimations.length)return;
+ challengeTermSeen=false;
  fullMapOpen=false;state.lastMove=null;state.roundDifficulty=null;state.challenge=null;state.openRound=false;state.screen='prep';save();render();
 }
 
