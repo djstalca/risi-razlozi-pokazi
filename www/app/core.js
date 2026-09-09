@@ -18,6 +18,7 @@ let moveAnimations = [];
 let moveVisualPositions = null;
 let moveAnimationRunning = false;
 let moveAnimationHighlight = null;
+let challengeTermSeen = false;
 
 function freshState(){
  return {
@@ -135,6 +136,7 @@ function modeMeta(mode){
 }
 function difficultyLabel(d){return d===3?'LAHKA':d===4?'SREDNJA':'TEŽKA'}
 function topbar(extra=''){return `<div class="topbar"><div class="logo">AKCIJA</div>${extra}</div>`}
+function gameTopbar(extra=''){return `<div class="topbar inGameTopbar"><div class="logo">AKCIJA</div>${extra}</div>`}
 function setScreen(screen){state.screen=screen;save();render()}
 function safeVibrate(pattern){
  if(!state.vibration||!navigator.vibrate)return;
