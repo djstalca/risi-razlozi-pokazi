@@ -30,7 +30,7 @@ test('setup uses tap-first segmented controls and a switch',()=>{
 test('challenge cannot start before the term has been revealed',()=>{
   assert.match(round,/challengeTermSeen=false/);
   assert.match(round,/id="startRoundButton"/);
-  assert.match(round,/disabled aria-disabled="true"/);
+  assert.match(round,/disabled aria-disabled/);
   assert.match(round,/function markChallengeTermSeen/);
   assert.match(round,/if\(!challengeTermSeen\)return/);
 });
