@@ -81,48 +81,53 @@ function renderSettings(app){
  </section>`;
 }
 
+function segmentButton(label,active,onclick,extra=''){
+ return `<button type="button" class="segmentButton ${active?'active':''}" aria-pressed="${active?'true':'false'}" onclick="${onclick}">${label}${extra}</button>`;
+}
 function renderSetup(app){
+ app.className='app setupApp';
  app.innerHTML=`
- ${topbar(`<button class="secondary small" onclick="setScreen('home')">Nazaj</button>`)}
- <section class="card">
+ ${gameTopbar(`<button class="secondary small" onclick="setScreen('home')">Nazaj</button>`)}
+ <section class="card setupCard">
   <h2>Nastavitev igre</h2>
-  <div class="stack">
-   <label>Število ekip
-    <select onchange="changeTeamCount(this.value)">
-     ${[2,3,4].map(n=>`<option value="${n}" ${state.teams.length===n?'selected':''}>${n}</option>`).join('')}
-    </select>
-   </label>
-   <div class="stack">
+  <div class="stack setupStack">
+   <div class="setupGroup">
+    <div class="setupLabel">Število ekip</div>
+    <div class="segmented segmented3" role="group" aria-label="Število ekip">
+     ${[2,3,4].map(n=>segmentButton(String(n),state.teams.length===n,`changeTeamCount(${n})`)).join('')}
+    </div>
+   </div>
+   <div class="stack teamNames">
     ${state.teams.map((t,i)=>`
      <div class="teamRow">
       <div class="teamDot" style="background:${teamColor(i)}">${i+1}</div>
       <input maxlength="40" autocomplete="off" aria-label="Ime ekipe ${i+1}" value="${esc(t.name)}" oninput="renameTeam(${i},this.value)">
      </div>`).join('')}
    </div>
-   <label>Dolžina igre
-    <select onchange="changeGameLength(this.value)">
+   <div class="setupGroup">
+    <div class="setupLabel">Dolžina igre</div>
+    <div class="segmented segmented3 gameLengthSegments" role="group" aria-label="Dolžina igre">
      ${[
-       {value:30,label:'Hitra · 30 polj'},
-       {value:40,label:'Klasična · 40 polj'},
-       {value:48,label:'Dolga · 48 polj'}
-     ].map(o=>`<option value="${o.value}" ${state.gameLength===o.value?'selected':''}>${o.label}</option>`).join('')}
-    </select>
-   </label>
-   <div class="grid2">
-    <label>Čas runde
-     <select onchange="state.duration=Number(this.value);save()">
-      ${[30,45,60,90].map(n=>`<option value="${n}" ${state.duration===n?'selected':''}>${n} s</option>`).join('')}
-     </select>
-    </label>
-    <label>Izbijanje nasprotnikov
-     <select onchange="state.bumping=this.value==='on';save()">
-      <option value="on" ${state.bumping?'selected':''}>Vključeno</option>
-      <option value="off" ${!state.bumping?'selected':''}>Izključeno</option>
-     </select>
-    </label>
+       {value:30,label:'Hitra',sub:'30'},
+       {value:40,label:'Klasična',sub:'40'},
+       {value:48,label:'Dolga',sub:'48'}
+     ].map(o=>segmentButton(`<b>${o.label}</b><span>${o.sub} polj</span>`,state.gameLength===o.value,`changeGameLength(${o.value})`)).join('')}
+    </div>
    </div>
-   <div class="notice"><strong>${gameLengthLabel()} · ${activeBoardFields()} polj.</strong> Težavnost 3 / 4 / 5 izbereš pred vsako rundo.</div>
-   <button class="primary" onclick="beginGame()">ZAČNI IGRO</button>
+   <div class="setupGroup">
+    <div class="setupLabel">Čas runde</div>
+    <div class="segmented segmented4" role="group" aria-label="Čas runde">
+     ${[30,45,60,90].map(n=>segmentButton(`${n}<span>s</span>`,state.duration===n,`setRoundDuration(${n})`)).join('')}
+    </div>
+   </div>
+   <div class="settingRow">
+    <div>
+     <div class="setupLabel">Izbijanje nasprotnikov</div>
+     <div class="settingHint">Nasprotnik na istem polju gre eno polje nazaj.</div>
+    </div>
+    <button type="button" class="toggleSwitch ${state.bumping?'on':''}" role="switch" aria-checked="${state.bumping?'true':'false'}" aria-label="Izbijanje nasprotnikov" onclick="toggleBumping()"><span class="toggleKnob"></span></button>
+   </div>
+   <button class="primary setupStart" onclick="beginGame()">ZAČNI IGRO</button>
   </div>
  </section>`;
 }
@@ -138,6 +143,12 @@ function changeGameLength(v){
  state.teams.forEach(t=>t.pos=clamp(t.pos,0,finishPosition()));
  save();render();
 }
+function setRoundDuration(v){
+ const n=Number(v);
+ if(!VALID_DURATIONS.has(n))return;
+ state.duration=n;save();render();
+}
+function toggleBumping(){state.bumping=!state.bumping;save();render()}
 function renameTeam(i,v){state.teams[i].name=String(v).trim().slice(0,40)||`Ekipa ${i+1}`;save()}
 function resetRoundData(){
  state.current=0;
@@ -155,6 +166,7 @@ function resetRoundData(){
  moveVisualPositions=null;
  moveAnimationRunning=false;
  moveAnimationHighlight=null;
+ challengeTermSeen=false;
 }
 function beginGame(){
  pendingResumeScreen=null;
