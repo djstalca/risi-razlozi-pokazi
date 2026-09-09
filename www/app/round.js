@@ -1,10 +1,11 @@
 function renderPrep(app){
+ app.className='app stageApp';
  const t=state.teams[state.current],mode=modeForPosition(t.pos),meta=modeMeta(mode);
  app.innerHTML=`
- ${topbar()}
- <section class="card center">
-  <div class="badge">${meta.icon} ${mode}</div>
-  <h1 style="font-size:42px;margin:18px 0">${esc(t.name)}</h1>
+ ${gameTopbar(`<span class="badge compactModeBadge">${meta.icon} ${mode}</span>`)}
+ <section class="card center stageCard difficultyCard">
+  <div class="stageEyebrow">Na potezi</div>
+  <h1>${esc(t.name)}</h1>
   <p class="muted">Koliko tvegate v tej rundi?</p>
   <div class="difficultyGrid">
    <button class="success diffButton" onclick="chooseDifficulty(3)"><b>3</b><span>LAHKA</span></button>
@@ -27,18 +28,30 @@ function pickTerm(diff,mode){
  state.used[key].push(term.text);return term;
 }
 function chooseDifficulty(diff){
+ challengeTermSeen=false;
  state.roundDifficulty=Number(diff);
  state.openRound=nextOpenFlag();
  const team=state.teams[state.current],mode=modeForPosition(team.pos);
  state.challenge={...pickTerm(diff,mode),mode};
  state.screen='challenge';save();render();
 }
+function markChallengeTermSeen(){
+ if(challengeTermSeen)return;
+ challengeTermSeen=true;
+ const startButton=document.getElementById('startRoundButton');
+ if(startButton){startButton.disabled=false;startButton.removeAttribute('aria-disabled')}
+ const hint=document.getElementById('termSeenHint');
+ if(hint)hint.textContent='Pojem viden ✓';
+}
 function revealTerm(show,event){
  const word=document.getElementById('secretWord');
  const button=document.getElementById('revealTermButton');
  if(!word||!button)return;
- if(show&&event?.pointerId!==undefined){
-  try{button.setPointerCapture(event.pointerId)}catch(e){}
+ if(show){
+  markChallengeTermSeen();
+  if(event?.pointerId!==undefined){
+   try{button.setPointerCapture(event.pointerId)}catch(e){}
+  }
  }
  word.hidden=!show;
  button.classList.toggle('holding',show);
@@ -51,12 +64,14 @@ function termRevealKey(event,show){
  revealTerm(show,event);
 }
 function renderChallenge(app){
- const c=state.challenge,meta=modeMeta(c.mode);
+ app.className='app challengeApp';
+ const c=state.challenge,meta=modeMeta(c.mode),team=state.teams[state.current];
+ const pointsLabel=`${c.difficulty} ${c.difficulty===5?'TOČK':'TOČKE'}`;
  app.innerHTML=`
- ${topbar(state.openRound?`<span class="badge openBadge">OPEN RUNDA</span>`:'')}
+ ${gameTopbar(state.openRound?`<span class="badge openBadge">OPEN RUNDA</span>`:'')}
  <section class="card center challengeCard">
-  <div class="mode">${meta.icon} ${c.mode}</div>
-  ${state.openRound?`<div class="badge openBadge">UGIBAJO VSE EKIPE</div>`:''}
+  <div class="challengeMeta">${esc(team.name)} · ${meta.icon} ${c.mode} · ${pointsLabel}</div>
+  ${state.openRound?`<div class="badge openBadge challengeOpen">UGIBAJO VSE EKIPE</div>`:''}
   <div class="secretTermBox">
    <div class="secretHint">Telefon naj gleda samo podajalec.</div>
    <div class="word secretWord" id="secretWord" hidden aria-live="polite">${esc(c.text)}</div>
@@ -72,11 +87,10 @@ function renderChallenge(app){
     onkeydown="termRevealKey(event,true)"
     onkeyup="termRevealKey(event,false)"
    >PRITISNI IN DRŽI ZA POJEM</button>
+   <div class="termSeenHint" id="termSeenHint">Najprej si oglej pojem</div>
   </div>
-  <div class="badge">${difficultyLabel(c.difficulty)} · ${c.difficulty} ${c.difficulty===5?'TOČK':'TOČKE'}</div>
-  <p class="muted">${meta.help}</p>
-  <div class="notice"><strong>Zapomni si pojem.</strong> Ko spustiš gumb, se pojem sam skrije.</div>
-  <button class="primary" style="width:100%;margin-top:14px" onclick="startRound()">ZAČNI RUNDO</button>
+  <p class="muted challengeRule">${meta.help}</p>
+  <button class="primary challengeStart" id="startRoundButton" style="width:100%" onclick="startRound()" ${challengeTermSeen?'':'disabled aria-disabled="true"'}>ZAČNI RUNDO</button>
  </section>`;
 }
 
@@ -94,20 +108,26 @@ function beep(freq=760,duration=.07){
  }catch(e){}
 }
 function startRound(){
+ if(!challengeTermSeen)return;
  initAudio();lastBeepSecond=null;
  state.timerEnd=Date.now()+state.duration*1000;state.remaining=state.duration;
  state.screen=state.challenge.mode==='NARIŠI'?'draw':'timer';save();render();
 }
 function renderTimer(app){
+ app.className='app stageApp timerStageApp';
  const c=state.challenge,meta=modeMeta(c.mode);
+ const remaining=state.remaining??state.duration;
+ const progress=Math.max(0,Math.min(1,remaining/state.duration));
  app.innerHTML=`
- ${topbar(state.openRound?`<span class="badge openBadge">OPEN</span>`:`<span class="badge">${meta.icon} ${c.mode}</span>`)}
- <section class="card center">
-  <div class="muted">${state.openRound?'Vse ekipe ugibajo':esc(state.teams[state.current].name)}</div>
-  <div class="timer" id="timer">${state.remaining??state.duration}</div>
+ ${gameTopbar(state.openRound?`<span class="badge openBadge">OPEN</span>`:`<span class="badge compactModeBadge">${meta.icon} ${c.mode}</span>`)}
+ <section class="card center stageCard timerCard">
+  <div class="stageEyebrow">${state.openRound?'Vse ekipe ugibajo':esc(state.teams[state.current].name)}</div>
+  <div class="timerRing ${remaining<=10?'low':''} ${remaining<=5?'urgent':''}" id="timerRing" style="--timer-progress:${progress*360}deg">
+   <div class="timer" id="timer">${remaining}</div>
+  </div>
   <h2>Pojem je skrit</h2>
-  <p class="muted">${meta.help}</p>
-  <button class="secondary" style="width:100%" onclick="finishTimer()">ZAKLJUČI PREJ</button>
+  <p class="muted timerRule">${meta.help}</p>
+  <button class="secondary timerFinish" style="width:100%" onclick="finishTimer()">ZAKLJUČI PREJ</button>
  </section>`;
  startClock();
 }
@@ -131,6 +151,13 @@ function tick(){
  state.remaining=remaining;
  const timer=document.getElementById('timer')||document.getElementById('drawTimer');
  if(timer){timer.textContent=remaining;timer.classList.toggle('low',remaining<=10)}
+ const ring=document.getElementById('timerRing');
+ if(ring){
+  const progress=Math.max(0,Math.min(1,remaining/state.duration));
+  ring.style.setProperty('--timer-progress',`${progress*360}deg`);
+  ring.classList.toggle('low',remaining<=10);
+  ring.classList.toggle('urgent',remaining<=5);
+ }
  if(remaining!==lastBeepSecond&&(remaining===10||(remaining<=5&&remaining>0))){
   lastBeepSecond=remaining;beep(remaining===10?650:820,.06);
   if(remaining<=3)safeVibrate(35);
