@@ -1,6 +1,7 @@
 let fullMapOpen=false;
-let lastBoardViewportRowCount=null;
+let lastBoardViewportRowCount=5;
 let boardResizeTimer=null;
+let boardMeasureRaf=null;
 let moveAnimationTimer=null;
 let moveAnimationFrames=[];
 let moveAnimationFrameIndex=0;
@@ -68,26 +69,53 @@ function logicalBoardRows(){
  }
  return rows;
 }
-function desiredBoardViewportRows(){
- const height=Number(window.innerHeight)||800;
- const teams=state.teams.length;
- if(height<700)return 4;
- if(teams>=4&&height<930)return 4;
- if(teams===3&&height<840)return 4;
- if(height<760)return 4;
- return 5;
+function responsiveBoardRowCountFromSpace(availableHeight,boardWidth,rowGap=4,totalRows=logicalBoardRows().length){
+ const height=Math.max(0,Number(availableHeight)||0);
+ const width=Math.max(0,Number(boardWidth)||0);
+ const gap=Math.max(0,Number(rowGap)||0);
+ const rows=Math.max(1,Number(totalRows)||1);
+ const cellWidth=Math.max(0,(width-gap*4)/5);
+ const comfortableRowHeight=clamp(cellWidth*.82,56,72);
+ const fitted=Math.floor((height+gap)/(comfortableRowHeight+gap));
+ return Math.max(1,Math.min(rows,clamp(fitted,3,rows)));
 }
-function visibleBoardRowIndexes(positions,desiredRows=5){
+function measureResponsiveBoardRowCount(){
+ if(typeof document==='undefined'||typeof document.querySelector!=='function')return null;
+ const board=document.querySelector('.boardViewportCard .board');
+ if(!board)return null;
+ let gap=4;
+ if(typeof getComputedStyle==='function'){
+  const styles=getComputedStyle(board);
+  gap=parseFloat(styles.rowGap||styles.gap)||4;
+ }
+ return responsiveBoardRowCountFromSpace(board.clientHeight,board.clientWidth,gap,logicalBoardRows().length);
+}
+function syncResponsiveBoardRows(){
+ if(state.screen!=='board'||fullMapOpen)return;
+ const next=measureResponsiveBoardRowCount();
+ if(!Number.isInteger(next)||next===lastBoardViewportRowCount)return;
+ lastBoardViewportRowCount=next;
+ render();
+}
+function scheduleResponsiveBoardMeasure(){
+ if(typeof requestAnimationFrame!=='function')return;
+ if(boardMeasureRaf&&typeof cancelAnimationFrame==='function')cancelAnimationFrame(boardMeasureRaf);
+ boardMeasureRaf=requestAnimationFrame(()=>{
+  boardMeasureRaf=null;
+  syncResponsiveBoardRows();
+ });
+}
+function visibleBoardRowIndexes(positions,desiredRows=lastBoardViewportRowCount||5){
  const rows=logicalBoardRows();
  const safePositions=(Array.isArray(positions)&&positions.length?positions:[0]).map(pos=>clamp(pos,0,finishPosition()));
  const lastPosition=Math.min(...safePositions);
  const bottomRow=Math.min(rows.length-1,Math.floor(lastPosition/5));
- const count=Math.max(1,Math.min(clamp(desiredRows,1,5),rows.length-bottomRow));
+ const count=Math.max(1,Math.min(clamp(desiredRows,1,rows.length),rows.length-bottomRow));
  const indexes=[];
  for(let row=bottomRow+count-1;row>=bottomRow;row--)indexes.push(row);
  return indexes;
 }
-function viewportBoardRows(desiredRows=desiredBoardViewportRows()){
+function viewportBoardRows(desiredRows=lastBoardViewportRowCount||5){
  const rows=logicalBoardRows();
  return visibleBoardRowIndexes(displayTeamPositions(),desiredRows).map(index=>rows[index]);
 }
@@ -179,9 +207,7 @@ function renderBoard(app){
  if(moveAnimations.length&&!moveAnimationRunning&&!moveVisualPositions)prepareMoveAnimation();
  const t=state.teams[state.current];
  const mode=modeForPosition(displayTeamPosition(state.current)),meta=modeMeta(mode);
- const desiredRows=desiredBoardViewportRows();
- lastBoardViewportRowCount=desiredRows;
- const visibleRows=viewportBoardRows(desiredRows);
+ const visibleRows=viewportBoardRows(lastBoardViewportRowCount||5);
  const animating=moveAnimationRunning||moveAnimations.length>0||Boolean(moveVisualPositions);
  app.innerHTML=`<div class="gameBoardScreen">
  ${gameTopbar(`<button class="secondary small" onclick="resetConfirm()" ${animating?'disabled':''}>Nova igra</button>`)}
@@ -206,6 +232,7 @@ function renderBoard(app){
  if(moveVisualPositions&&!moveAnimationRunning&&moveAnimationFrames.length){
   requestAnimationFrame(startPreparedMoveAnimation);
  }
+ if(!fullMapOpen)scheduleResponsiveBoardMeasure();
 }
 function prepareRound(){
  if(moveAnimationRunning||moveAnimations.length)return;
@@ -213,13 +240,12 @@ function prepareRound(){
  fullMapOpen=false;state.lastMove=null;state.roundDifficulty=null;state.challenge=null;state.openRound=false;state.screen='prep';save();render();
 }
 
+function handleBoardViewportResize(){
+ if(state.screen!=='board'||fullMapOpen)return;
+ clearTimeout(boardResizeTimer);
+ boardResizeTimer=setTimeout(scheduleResponsiveBoardMeasure,80);
+}
 if(typeof window!=='undefined'&&window.addEventListener){
- window.addEventListener('resize',()=>{
-  if(state.screen!=='board'||fullMapOpen||moveAnimationRunning)return;
-  clearTimeout(boardResizeTimer);
-  boardResizeTimer=setTimeout(()=>{
-   const next=desiredBoardViewportRows();
-   if(next!==lastBoardViewportRowCount)render();
-  },100);
- });
+ window.addEventListener('resize',handleBoardViewportResize);
+ window.visualViewport?.addEventListener?.('resize',handleBoardViewportResize);
 }
