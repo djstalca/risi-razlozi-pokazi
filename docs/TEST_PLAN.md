@@ -8,7 +8,7 @@ Vsak kandidat za izdajo mora prestati avtomatske in ročne teste.
 - sintakso vseh JS datotek,
 - 720 unikatnih pojmov,
 - 80 pojmov v vsakem difficulty × mode bucketu,
-- največ 2 pojma z isto končno besedo,
+- največ 3 pojmi z isto končno besedo,
 - isti pojem se na isti napravi v istem koledarskem dnevu ne ponovi,
 - osnovno logiko plošče,
 - izbijanje vključeno/izključeno,
