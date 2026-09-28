@@ -14,7 +14,7 @@ for (const file of files) {
 
 const terms = context.window.TERMS;
 if (!Array.isArray(terms)) throw new Error('TERMS was not created.');
-if (terms.length !== 450) throw new Error(`Expected 450 terms, found ${terms.length}.`);
+if (terms.length !== 720) throw new Error(`Expected 720 terms, found ${terms.length}.`);
 
 const modes = new Set(['RAZLOŽI', 'NARIŠI', 'POKAŽI']);
 const difficulties = new Set([3, 4, 5]);
@@ -48,7 +48,7 @@ for (const term of terms) {
 for (const difficulty of difficulties) {
   for (const mode of modes) {
     const key = `${difficulty}:${mode}`;
-    if (buckets.get(key) !== 50) throw new Error(`${key} must contain exactly 50 terms; found ${buckets.get(key) || 0}.`);
+    if (buckets.get(key) !== 80) throw new Error(`${key} must contain exactly 80 terms; found ${buckets.get(key) || 0}.`);
   }
 }
 
@@ -62,4 +62,4 @@ for (const file of files) {
   if (!index.includes(`terms/${file}`)) throw new Error(`www/index.html does not load ${file}.`);
 }
 
-console.log('Content validation OK: 450 unique Slovenian terms, 50 per difficulty/mode bucket, max 2 shared final words.');
+console.log('Content validation OK: 720 unique Slovenian terms, 80 per difficulty/mode bucket, max 2 shared final words.');
