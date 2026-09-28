@@ -44,7 +44,7 @@ Primerna je za druženja s prijatelji, družinske večere, počitnice in zabave.
 1. Družabna igra za 2–4 ekipe
 2. Riši, razloži ali pokaži
 3. Izberi težavnost in tvegaj več
-4. 450 slovenskih pojmov
+4. 720 slovenskih pojmov
 5. Vsi proti vsem v OPEN rundah
 6. Igrajte kjerkoli – tudi brez interneta
 
