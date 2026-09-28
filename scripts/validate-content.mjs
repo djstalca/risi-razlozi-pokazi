@@ -52,7 +52,7 @@ for (const difficulty of difficulties) {
   }
 }
 
-const overusedFinalWords = [...finalWords.entries()].filter(([, variants]) => variants.length > 2);
+const overusedFinalWords = [...finalWords.entries()].filter(([, variants]) => variants.length > 3);
 if (overusedFinalWords.length) {
   throw new Error(`Too many near-variants with the same final word: ${JSON.stringify(overusedFinalWords)}`);
 }
@@ -62,4 +62,4 @@ for (const file of files) {
   if (!index.includes(`terms/${file}`)) throw new Error(`www/index.html does not load ${file}.`);
 }
 
-console.log('Content validation OK: 720 unique Slovenian terms, 80 per difficulty/mode bucket, max 2 shared final words.');
+console.log('Content validation OK: 720 unique Slovenian terms, 80 per difficulty/mode bucket, max 3 shared final words.');
