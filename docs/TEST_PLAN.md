@@ -42,6 +42,9 @@ Minimalna matrika pred v1.0:
 - izbijanje vključeno,
 - izbijanje izključeno,
 - vse tri težavnosti,
+- enkratna menjava pojma pred začetkom runde,
+- zamenjani pojem se isti dan ne pojavi več,
+- po menjavi je treba novi pojem ponovno razkriti pred začetkom,
 - RAZLOŽI,
 - NARIŠI,
 - POKAŽI,
@@ -54,6 +57,8 @@ Minimalna matrika pred v1.0:
 - razveljavi uspeh/neuspeh v 8 sekundah,
 - razveljavi napačno izbrano ekipo pri OPEN,
 - razveljavi rezultat, ki bi sicer zaključil igro.
+- zmagovalni zaslon pokaže število rund, OPEN rund, uspehe 3/4/5, OPEN zadetke, osvojene točke in najtežji zadetek,
+- razveljavitev zadnjega rezultata povrne tudi statistiko.
 
 ## Risanje
 
