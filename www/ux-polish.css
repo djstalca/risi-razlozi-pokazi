@@ -231,6 +231,14 @@
   font-weight:800;
   margin-top:9px;
 }
+.termSwapRow{margin-top:10px;display:flex;justify-content:center}
+.termSwapButton{min-height:38px;padding:7px 12px;font-size:11px}
+.termSwapButton:disabled{opacity:.35}
+.termSwapUsed{
+  display:inline-flex;align-items:center;min-height:36px;padding:6px 10px;
+  border:1px solid var(--line);border-radius:999px;color:var(--muted);
+  font-size:10px;font-weight:850
+}
 .challengeRule{
   line-height:1.4;
   max-width:560px;
@@ -293,6 +301,43 @@
 .winnerApp .winnerCard{max-width:680px;margin-inline:auto}
 .winnerCard h1{font-size:clamp(38px,10vw,70px);margin:16px 0}
 .winnerRanking{text-align:left;margin:24px 0}
+.gameSummary{
+  margin:24px 0;
+  padding:16px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#111318;
+  text-align:left;
+}
+.gameSummaryHeader{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-bottom:12px
+}
+.gameSummaryHeader .stageEyebrow{display:block;margin:0 0 2px}
+.gameSummaryHeader strong{font-size:22px}
+.gameSummaryGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.summaryTeamCard{
+  min-width:0;padding:11px;border:1px solid var(--line);
+  border-left:4px solid var(--team-color,var(--accent));
+  border-radius:14px;background:var(--panel)
+}
+.summaryTeamTitle{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.summaryTeamTitle strong{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.summaryTeamTitle span{font-size:11px;color:var(--muted);white-space:nowrap}
+.summaryMetrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 8px}
+.summaryMetrics span{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:5px 7px;border-radius:8px;background:#171a20;
+  color:var(--muted);font-size:10px
+}
+.summaryMetrics b{color:var(--text);font-size:11px}
+.summaryHardest{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-top:7px;padding-top:7px;border-top:1px solid var(--line);font-size:10px
+}
+.summaryHardest span{color:var(--muted)}
+.summaryHardest strong{max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 
 .score.active{
   outline:none;
@@ -327,6 +372,8 @@
   .challengeMeta{font-size:12px}
   .countdownNumber{font-size:clamp(110px,36vw,180px)}
   .timerRing{width:min(58vw,210px)}
+  .gameSummary{padding:12px}
+  .gameSummaryGrid{grid-template-columns:1fr}
 }
 @media(max-width:380px){
   .segmentButton b{font-size:12px}

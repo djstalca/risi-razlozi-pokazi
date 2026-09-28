@@ -240,6 +240,7 @@ function prepareRound(){
  if(moveAnimationRunning||moveAnimations.length)return;
  clearResultUndo();
  challengeTermSeen=false;
+ state.termSwapUsed=false;
  fullMapOpen=false;state.lastMove=null;state.roundDifficulty=null;state.challenge=null;state.openRound=false;state.screen='prep';save();render();
 }
 

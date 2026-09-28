@@ -43,6 +43,8 @@ function armResultUndo(){
    challenge:state.challenge?JSON.parse(JSON.stringify(state.challenge)):null,
    roundDifficulty:state.roundDifficulty,
    openRound:state.openRound,
+   termSwapUsed:state.termSwapUsed,
+   stats:JSON.parse(JSON.stringify(state.stats)),
    lastMove:state.lastMove,
    winner:state.winner
   }
@@ -82,6 +84,8 @@ function undoLastResult(){
  state.challenge=snapshot.challenge?JSON.parse(JSON.stringify(snapshot.challenge)):null;
  state.roundDifficulty=snapshot.roundDifficulty;
  state.openRound=Boolean(snapshot.openRound);
+ state.termSwapUsed=Boolean(snapshot.termSwapUsed);
+ state.stats=normalizeStats(snapshot.stats,state.teams.length);
  state.lastMove=snapshot.lastMove??null;
  state.winner=snapshot.winner??null;
  state.countdownEnd=null;
@@ -99,6 +103,72 @@ function undoLastResult(){
  save();render();
 }
 
+function recordHardestGuess(teamIndex,challenge=state.challenge){
+ const stats=teamStats(teamIndex);
+ if(!challenge||![3,4,5].includes(Number(challenge.difficulty)))return;
+ if(!stats.hardest||Number(challenge.difficulty)>Number(stats.hardest.difficulty)){
+  stats.hardest={
+   text:String(challenge.text||'').slice(0,120),
+   difficulty:Number(challenge.difficulty),
+   mode:challenge.mode
+  };
+ }
+}
+function recordNormalRoundStats(teamIndex,success){
+ if(!state.stats)state.stats=freshStats(state.teams.length);
+ state.stats.rounds+=1;
+ const stats=teamStats(teamIndex);
+ stats.rounds+=1;
+ if(!success)return;
+ const diff=Number(state.challenge?.difficulty);
+ stats.normalWins+=1;
+ if([3,4,5].includes(diff))stats.difficultyWins[diff]+=1;
+ stats.pointsEarned+=diff||0;
+ recordHardestGuess(teamIndex);
+}
+function recordOpenRoundStats(active,guesser){
+ if(!state.stats)state.stats=freshStats(state.teams.length);
+ state.stats.rounds+=1;
+ state.stats.openRounds+=1;
+ teamStats(active).rounds+=1;
+ if(guesser<0)return;
+ const guesserStats=teamStats(guesser);
+ guesserStats.openGuesses+=1;
+ recordHardestGuess(guesser);
+ if(guesser===active){
+  guesserStats.pointsEarned+=6;
+ }else{
+  guesserStats.pointsEarned+=4;
+  teamStats(active).pointsEarned+=2;
+ }
+}
+function gameSummaryHtml(ranking){
+ const summary=normalizeStats(state.stats,state.teams.length);
+ return `<section class="gameSummary">
+  <div class="gameSummaryHeader">
+   <div><span class="stageEyebrow">Povzetek igre</span><strong>${summary.rounds} rund</strong></div>
+   <span class="badge">OPEN: ${summary.openRounds}</span>
+  </div>
+  <div class="gameSummaryGrid">
+   ${ranking.map(t=>{
+    const stats=summary.teams[t.i]||freshTeamStats();
+    const hardest=stats.hardest
+     ?`<div class="summaryHardest"><span>Najtežji zadetek</span><strong>${stats.hardest.difficulty} · ${esc(stats.hardest.text)}</strong></div>`
+     :`<div class="summaryHardest"><span>Najtežji zadetek</span><strong>—</strong></div>`;
+    return `<div class="summaryTeamCard" style="--team-color:${teamColor(t.i)}">
+     <div class="summaryTeamTitle"><strong>${esc(t.name)}</strong><span>${stats.pointsEarned} točk</span></div>
+     <div class="summaryMetrics">
+      <span>Runde <b>${stats.rounds}</b></span>
+      <span>Uspelo <b>${stats.normalWins}</b></span>
+      <span>OPEN <b>${stats.openGuesses}</b></span>
+      <span>3 / 4 / 5 <b>${stats.difficultyWins[3]} / ${stats.difficultyWins[4]} / ${stats.difficultyWins[5]}</b></span>
+     </div>
+     ${hardest}
+    </div>`;
+   }).join('')}
+  </div>
+ </section>`;
+}
 function applyMove(idx,points,allowBump){
  const finish=finishPosition();
  const team=state.teams[idx],old=team.pos;
@@ -146,6 +216,7 @@ function resolveNormal(success){
  moveAnimations=[];
  armResultUndo();
  const mover=state.current;
+ recordNormalRoundStats(mover,success);
  advancePresenter(mover);
  if(!success){
   state.lastMove=`${state.teams[mover].name}: brez premika.`;
@@ -161,6 +232,7 @@ function resolveOpen(idx){
  moveAnimations=[];
  armResultUndo();
  const active=state.current;
+ recordOpenRoundStats(active,idx);
  advancePresenter(active);
  if(idx<0){state.lastMove='OPEN runda: nihče ni uganil.';nextTurn();return}
  if(idx===active){
@@ -184,7 +256,7 @@ function resolveOpen(idx){
 function nextTurn(){
  challengeTermSeen=false;
  state.current=(state.current+1)%state.teams.length;
- state.challenge=null;state.roundDifficulty=null;state.openRound=false;state.countdownEnd=null;state.remaining=null;state.timerEnd=null;
+ state.challenge=null;state.roundDifficulty=null;state.openRound=false;state.termSwapUsed=false;state.countdownEnd=null;state.remaining=null;state.timerEnd=null;
  state.screen='board';save();render();
 }
 function finishGame(idx){state.winner=idx;state.screen='winner';save();render()}
@@ -201,6 +273,7 @@ function renderWinner(app){
   <div class="stack winnerRanking">
    ${ranking.map((t,i)=>`<div class="score"><strong>${i+1}. ${esc(t.name)}</strong><span>${t.pos>=finish?'CILJ':`${t.pos} / ${activeBoardFields()}`}</span></div>`).join('')}
   </div>
+  ${gameSummaryHtml(ranking)}
   ${undoResultHtml()}
   <div class="stack">
    <button class="primary" style="width:100%" onclick="replaySameTeams()">PONOVI Z ISTIMI EKIPAMI</button>

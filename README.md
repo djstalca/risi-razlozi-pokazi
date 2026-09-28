@@ -11,6 +11,8 @@
 - opcijska imena igralcev in samodejna rotacija podajalca
 - opcijsko odštevanje 3–2–1 pred rundo
 - 8-sekundni razveljavi zadnji rezultat
+- ena menjava pojma pred začetkom vsake runde
+- povzetek partije s statistiko ekip in najtežjimi zadetki
 - nastavljivo izbijanje nasprotnikov
 - risanje neposredno na zaslon
 - jasne, oštevilčene figurice ekip

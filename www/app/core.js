@@ -23,6 +23,58 @@ let moveAnimationRunning = false;
 let moveAnimationHighlight = null;
 let challengeTermSeen = false;
 
+function freshTeamStats(){
+ return {
+  rounds:0,
+  normalWins:0,
+  difficultyWins:{3:0,4:0,5:0},
+  openGuesses:0,
+  pointsEarned:0,
+  hardest:null
+ };
+}
+function freshStats(teamCount=2){
+ return {
+  rounds:0,
+  openRounds:0,
+  teams:Array.from({length:Math.max(2,Number(teamCount)||2)},freshTeamStats)
+ };
+}
+function normalizeTeamStats(raw){
+ const base=freshTeamStats();
+ if(!raw||typeof raw!=='object')return base;
+ const hardest=raw.hardest&&typeof raw.hardest==='object'&&typeof raw.hardest.text==='string'&&[3,4,5].includes(Number(raw.hardest.difficulty))&&MODES.includes(raw.hardest.mode)
+  ?{text:String(raw.hardest.text).slice(0,120),difficulty:Number(raw.hardest.difficulty),mode:raw.hardest.mode}
+  :null;
+ const wins=raw.difficultyWins&&typeof raw.difficultyWins==='object'?raw.difficultyWins:{};
+ return {
+  rounds:Math.max(0,Math.floor(Number(raw.rounds)||0)),
+  normalWins:Math.max(0,Math.floor(Number(raw.normalWins)||0)),
+  difficultyWins:{
+   3:Math.max(0,Math.floor(Number(wins[3])||0)),
+   4:Math.max(0,Math.floor(Number(wins[4])||0)),
+   5:Math.max(0,Math.floor(Number(wins[5])||0))
+  },
+  openGuesses:Math.max(0,Math.floor(Number(raw.openGuesses)||0)),
+  pointsEarned:Math.max(0,Math.floor(Number(raw.pointsEarned)||0)),
+  hardest
+ };
+}
+function normalizeStats(raw,teamCount){
+ const count=Math.max(2,Math.min(4,Number(teamCount)||2));
+ const teams=Array.from({length:count},(_,i)=>normalizeTeamStats(raw?.teams?.[i]));
+ return {
+  rounds:Math.max(0,Math.floor(Number(raw?.rounds)||0)),
+  openRounds:Math.max(0,Math.floor(Number(raw?.openRounds)||0)),
+  teams
+ };
+}
+function teamStats(teamIndex){
+ if(!state.stats||!Array.isArray(state.stats.teams))state.stats=freshStats(state.teams.length);
+ while(state.stats.teams.length<state.teams.length)state.stats.teams.push(freshTeamStats());
+ return state.stats.teams[teamIndex]||freshTeamStats();
+}
+
 function freshState(){
  return {
   version:1,
@@ -43,6 +95,8 @@ function freshState(){
   roundDifficulty:null,
   openRound:false,
   openBag:[],
+  termSwapUsed:false,
+  stats:freshStats(2),
   countdownEnd:null,
   timerEnd:null,
   remaining:null,
@@ -85,6 +139,8 @@ function normalizeState(raw){
  next.used=raw.used&&typeof raw.used==='object'&&!Array.isArray(raw.used)?raw.used:{};
  next.openBag=Array.isArray(raw.openBag)?raw.openBag.filter(v=>typeof v==='boolean').slice(0,6):[];
  next.openRound=Boolean(raw.openRound);
+ next.termSwapUsed=Boolean(raw.termSwapUsed);
+ next.stats=normalizeStats(raw.stats,next.teams.length);
  next.countdownEnd=Number.isFinite(Number(raw.countdownEnd))?Number(raw.countdownEnd):null;
  next.roundDifficulty=[3,4,5].includes(Number(raw.roundDifficulty))?Number(raw.roundDifficulty):null;
  next.winner=Number.isInteger(raw.winner)&&raw.winner>=0&&raw.winner<next.teams.length?raw.winner:null;
