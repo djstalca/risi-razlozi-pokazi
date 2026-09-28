@@ -45,6 +45,7 @@ function chooseDifficulty(diff){
  }
  state.roundDifficulty=Number(diff);
  state.openRound=nextOpenFlag();
+ state.termSwapUsed=false;
  state.challenge={...term,mode};
  state.screen='challenge';save();render();
 }
@@ -55,6 +56,11 @@ function markChallengeTermSeen(){
  if(startButton){startButton.disabled=false;startButton.removeAttribute('aria-disabled')}
  const hint=document.getElementById('termSeenHint');
  if(hint)hint.textContent='Pojem viden ✓';
+ const swapButton=document.getElementById('swapTermButton');
+ if(swapButton&&!state.termSwapUsed){
+  swapButton.disabled=false;
+  swapButton.removeAttribute('aria-disabled');
+ }
 }
 function revealTerm(show,event){
  const word=document.getElementById('secretWord');
@@ -75,6 +81,18 @@ function termRevealKey(event,show){
  if(![' ','Enter'].includes(event.key))return;
  event.preventDefault();
  revealTerm(show,event);
+}
+function replaceChallengeTerm(){
+ if(state.termSwapUsed||!challengeTermSeen||!state.challenge)return;
+ const replacement=pickTerm(state.challenge.difficulty,state.challenge.mode);
+ if(!replacement){
+  alert('Danes ni več drugega pojma te težavnosti in načina.');
+  return;
+ }
+ state.challenge={...replacement,mode:state.challenge.mode};
+ state.termSwapUsed=true;
+ challengeTermSeen=false;
+ save();render();
 }
 function renderChallenge(app){
  app.className='app challengeApp';
@@ -102,6 +120,11 @@ function renderChallenge(app){
     onkeyup="termRevealKey(event,false)"
    >PRITISNI IN DRŽI ZA POJEM</button>
    <div class="termSeenHint" id="termSeenHint">Najprej si oglej pojem</div>
+   <div class="termSwapRow">
+    \${state.termSwapUsed
+     ?\`<span class="termSwapUsed">Menjava pojma porabljena</span>\`
+     :\`<button class="secondary termSwapButton" id="swapTermButton" onclick="replaceChallengeTerm()" disabled aria-disabled="true">DRUG POJEM · 1×</button>\`}
+   </div>
   </div>
   <p class="muted challengeRule">${meta.help}</p>
   <button class="primary challengeStart" id="startRoundButton" style="width:100%" onclick="startRound()" ${challengeTermSeen?'':'disabled aria-disabled="true"'}>ZAČNI RUNDO</button>
