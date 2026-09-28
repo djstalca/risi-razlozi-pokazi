@@ -23,7 +23,7 @@ function continueGame(){
  state.screen=pendingResumeScreen;pendingResumeScreen=null;save();render();
 }
 function userPreferences(){
- return {duration:state.duration,gameLength:state.gameLength,bumping:state.bumping,sound:state.sound,vibration:state.vibration};
+ return {duration:state.duration,gameLength:state.gameLength,bumping:state.bumping,sound:state.sound,vibration:state.vibration,countdown:state.countdown};
 }
 function newGameSetup(){
  const prefs=userPreferences();
@@ -46,6 +46,8 @@ function renderRules(app){
    <li><strong>Način</strong> določa polje, na katerem stoji ekipa: razloži, nariši ali pokaži.</li>
    <li><strong>Pred vsako rundo</strong> izbereš 3, 4 ali 5 točk. Višja vrednost pomeni težji pojem.</li>
    <li><strong>Pred začetkom</strong> podajalec pritisne in drži za prikaz pojma, si ga zapomni in nato začne rundo.</li>
+   <li><strong>Odštevanje 3–2–1</strong> lahko v nastavitvah vključiš ali izključiš. Ko je vključeno, se čas runde začne šele po odštevanju.</li>
+   <li><strong>Igralci v ekipah</strong> so opcijski. Če vneseš imena, aplikacija po vsaki odigrani rundi samodejno zamenja podajalca.</li>
    <li><strong>Brez ponavljanja</strong>: isti pojem se na tej napravi isti koledarski dan ne prikaže dvakrat, tudi če začneš novo igro.</li>
    <li><strong>Dolžino igre</strong> izbereš pred začetkom: Hitra 30, Klasična 40 ali Dolga 48 polj.</li>
    <li><strong>OPEN runda</strong>: ugibajo vsi. Če ugane aktivna ekipa, dobi 6 polj. Če ugane druga ekipa, dobi 4 polja, aktivna pa 2.</li>
@@ -77,6 +79,12 @@ function renderSettings(app){
      ${[30,45,60,90].map(n=>`<option value="${n}" ${state.duration===n?'selected':''}>${n} s</option>`).join('')}
     </select>
    </label>
+   <label>Odštevanje pred rundo
+    <select onchange="state.countdown=this.value==='on';save()">
+     <option value="on" ${state.countdown?'selected':''}>3–2–1 vključeno</option>
+     <option value="off" ${!state.countdown?'selected':''}>Izključeno</option>
+    </select>
+   </label>
    <div class="notice">Nastavitve se shranijo na tej napravi in veljajo tudi za naslednjo igro.</div>
   </div>
  </section>`;
@@ -84,6 +92,30 @@ function renderSettings(app){
 
 function segmentButton(label,active,onclick,extra=''){
  return `<button type="button" class="segmentButton ${active?'active':''}" aria-pressed="${active?'true':'false'}" onclick="${onclick}">${label}${extra}</button>`;
+}
+function teamSetupHtml(t,i){
+ const members=Array.isArray(t.members)?t.members:[];
+ return `<div class="teamSetupBlock" style="--team-color:${teamColor(i)}">
+  <div class="teamRow">
+   <div class="teamDot" style="background:${teamColor(i)}">${i+1}</div>
+   <input maxlength="40" autocomplete="off" aria-label="Ime ekipe ${i+1}" value="${esc(t.name)}" oninput="renameTeam(${i},this.value)">
+  </div>
+  <div class="memberEditor">
+   <div class="memberEditorHeader">
+    <span>Igralci <small>(opcijsko)</small></span>
+    <button type="button" class="secondary small" onclick="addTeamMember(${i})" ${members.length>=8?'disabled':''}>${members.length?'+ IGRALEC':'DODAJ IGRALCE'}</button>
+   </div>
+   ${members.length?`<div class="memberList">
+    ${members.map((name,j)=>`<div class="memberRow">
+     <span class="memberNumber">${j+1}</span>
+     <input maxlength="40" autocomplete="off" aria-label="Igralec ${j+1} v ekipi ${i+1}" value="${esc(name)}" oninput="renameTeamMember(${i},${j},this.value)">
+     <button type="button" class="secondary memberRemove" aria-label="Odstrani igralca ${j+1}" onclick="removeTeamMember(${i},${j})">×</button>
+    </div>`).join('')}
+   </div>
+   <div class="settingHint">Podajalec se po vsaki rundi samodejno zamenja.</div>`
+   :`<div class="settingHint">Dodaj imena, če želiš samodejno rotacijo podajalca.</div>`}
+  </div>
+ </div>`;
 }
 function renderSetup(app){
  app.className='app setupApp';
@@ -99,11 +131,7 @@ function renderSetup(app){
     </div>
    </div>
    <div class="stack teamNames">
-    ${state.teams.map((t,i)=>`
-     <div class="teamRow">
-      <div class="teamDot" style="background:${teamColor(i)}">${i+1}</div>
-      <input maxlength="40" autocomplete="off" aria-label="Ime ekipe ${i+1}" value="${esc(t.name)}" oninput="renameTeam(${i},this.value)">
-     </div>`).join('')}
+    ${state.teams.map(teamSetupHtml).join('')}
    </div>
    <div class="setupGroup">
     <div class="setupLabel">Dolžina igre</div>
@@ -134,7 +162,7 @@ function renderSetup(app){
 }
 function changeTeamCount(v){
  const n=Math.min(4,Math.max(2,Number(v)||2));
- while(state.teams.length<n)state.teams.push({name:`Ekipa ${state.teams.length+1}`,pos:0});
+ while(state.teams.length<n)state.teams.push({name:`Ekipa ${state.teams.length+1}`,pos:0,members:[],presenterIndex:0});
  state.teams=state.teams.slice(0,n);save();render();
 }
 function changeGameLength(v){
@@ -151,18 +179,42 @@ function setRoundDuration(v){
 }
 function toggleBumping(){state.bumping=!state.bumping;save();render()}
 function renameTeam(i,v){state.teams[i].name=String(v).trim().slice(0,40)||`Ekipa ${i+1}`;save()}
+function addTeamMember(teamIndex){
+ const team=state.teams[teamIndex];if(!team)return;
+ if(!Array.isArray(team.members))team.members=[];
+ if(team.members.length>=8)return;
+ team.members.push(`Igralec ${team.members.length+1}`);
+ team.presenterIndex=clamp(team.presenterIndex,0,team.members.length-1);
+ save();render();
+}
+function renameTeamMember(teamIndex,memberIndex,value){
+ const team=state.teams[teamIndex];
+ if(!team||!Array.isArray(team.members)||!team.members[memberIndex])return;
+ team.members[memberIndex]=String(value).slice(0,40);
+ save();
+}
+function removeTeamMember(teamIndex,memberIndex){
+ const team=state.teams[teamIndex];
+ if(!team||!Array.isArray(team.members))return;
+ team.members.splice(memberIndex,1);
+ team.presenterIndex=team.members.length?clamp(team.presenterIndex,0,team.members.length-1):0;
+ save();render();
+}
 function resetRoundData(){
  state.current=0;
- state.teams.forEach(t=>t.pos=0);
+ state.teams.forEach(t=>{t.pos=0;t.presenterIndex=0});
  state.used={};
  state.challenge=null;
  state.roundDifficulty=null;
  state.openRound=false;
  state.openBag=[];
+ state.countdownEnd=null;
  state.timerEnd=null;
  state.remaining=null;
  state.lastMove=null;
  state.winner=null;
+ state.undoResult=null;
+ clearTimeout(undoExpiryTimer);
  moveAnimations=[];
  moveVisualPositions=null;
  moveAnimationRunning=false;
