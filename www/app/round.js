@@ -22,17 +22,29 @@ function pickTerm(diff,mode){
  const key=`${diff}:${mode}`,pool=TERMS.filter(t=>t.difficulty===Number(diff)&&t.mode===mode);
  if(!state.used[key])state.used[key]=[];
  let used=state.used[key];
- let available=pool.filter(t=>!used.includes(t.text));
- if(!available.length){used=[];state.used[key]=used;available=pool.slice()}
+ const dailyUsed=dailyTermsUsed();
+ let available=pool.filter(t=>!used.includes(t.text)&&!dailyUsed.has(dailyTermKey(t.text)));
+ if(!available.length){
+  used=[];state.used[key]=used;
+  available=pool.filter(t=>!dailyUsed.has(dailyTermKey(t.text)));
+ }
+ if(!available.length)return null;
  const term=available[Math.floor(Math.random()*available.length)];
- state.used[key].push(term.text);return term;
+ state.used[key].push(term.text);
+ rememberDailyTerm(term.text);
+ return term;
 }
 function chooseDifficulty(diff){
  challengeTermSeen=false;
+ const team=state.teams[state.current],mode=modeForPosition(team.pos);
+ const term=pickTerm(diff,mode);
+ if(!term){
+  alert('Za danes so porabljeni vsi pojmi te težavnosti in načina. Poskusi drugo težavnost.');
+  return;
+ }
  state.roundDifficulty=Number(diff);
  state.openRound=nextOpenFlag();
- const team=state.teams[state.current],mode=modeForPosition(team.pos);
- state.challenge={...pickTerm(diff,mode),mode};
+ state.challenge={...term,mode};
  state.screen='challenge';save();render();
 }
 function markChallengeTermSeen(){

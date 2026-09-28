@@ -6,9 +6,10 @@ Vsak kandidat za izdajo mora prestati avtomatske in ročne teste.
 
 `npm run check` preveri:
 - sintakso vseh JS datotek,
-- 450 unikatnih pojmov,
-- 50 pojmov v vsakem difficulty × mode bucketu,
-- največ 2 pojma z isto končno besedo,
+- 720 unikatnih pojmov,
+- 80 pojmov v vsakem difficulty × mode bucketu,
+- največ 3 pojmi z isto končno besedo,
+- isti pojem se na isti napravi v istem koledarskem dnevu ne ponovi,
 - osnovno logiko plošče,
 - izbijanje vključeno/izključeno,
 - OPEN 4+2 brez izbijanja,

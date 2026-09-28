@@ -4,7 +4,7 @@
 
 ## Igra
 
-- 450 ročno kuriranih slovenskih pojmov
+- 720 ročno kuriranih slovenskih pojmov
 - 3 težavnosti
 - RAZLOŽI / NARIŠI / POKAŽI
 - OPEN runde
@@ -12,6 +12,7 @@
 - risanje neposredno na zaslon
 - jasne, oštevilčene figurice ekip
 - nadaljevanje prekinjene igre
+- dnevno preprečevanje ponavljanja že prikazanih pojmov
 - lokalno shranjevanje stanja
 - brez uporabniškega računa, oglasov ali analitike
 - v1.0 brez Android INTERNET permissiona

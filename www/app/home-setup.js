@@ -13,8 +13,8 @@ function renderHome(app){
   </div>
  </section>
  <section class="card">
-  <strong>450 ročno izbranih slovenskih pojmov</strong>
-  <p class="muted">150 lahkih, 150 srednjih in 150 težkih. Brez umetno ustvarjenih nizov podobnih izrazov.</p>
+  <strong>720 ročno izbranih slovenskih pojmov</strong>
+  <p class="muted">240 lahkih, 240 srednjih in 240 težkih. Težavnost je razvrščena posebej glede na način igre.</p>
  </section>
  <div class="footerNote">Samostojna slovenska družabna igra z originalno vsebino in oblikovanjem.</div>`;
 }
@@ -46,6 +46,7 @@ function renderRules(app){
    <li><strong>Način</strong> določa polje, na katerem stoji ekipa: razloži, nariši ali pokaži.</li>
    <li><strong>Pred vsako rundo</strong> izbereš 3, 4 ali 5 točk. Višja vrednost pomeni težji pojem.</li>
    <li><strong>Pred začetkom</strong> podajalec pritisne in drži za prikaz pojma, si ga zapomni in nato začne rundo.</li>
+   <li><strong>Brez ponavljanja</strong>: isti pojem se na tej napravi isti koledarski dan ne prikaže dvakrat, tudi če začneš novo igro.</li>
    <li><strong>Dolžino igre</strong> izbereš pred začetkom: Hitra 30, Klasična 40 ali Dolga 48 polj.</li>
    <li><strong>OPEN runda</strong>: ugibajo vsi. Če ugane aktivna ekipa, dobi 6 polj. Če ugane druga ekipa, dobi 4 polja, aktivna pa 2.</li>
    <li><strong>Izbijanje</strong> lahko pred igro vključiš ali izključiš. Ko je vključeno, uspešen običajni premik na nasprotnikovo polje nasprotnika pomakne eno polje nazaj.</li>

@@ -1,6 +1,7 @@
 const MODES = ['RAZLOŽI','NARIŠI','POKAŽI'];
 const COLORS = ['var(--team1)','var(--team2)','var(--team3)','var(--team4)'];
 const STORAGE_KEY = 'risi-razlozi-pokazi-game-v1';
+const DAILY_TERMS_KEY = 'risi-razlozi-pokazi-daily-terms-v1';
 const LEGACY_STORAGE_KEYS = ['akcija-game-v6'];
 const MAX_BOARD_FIELDS = 48;
 const VALID_GAME_LENGTHS = new Set([30,40,48]);
@@ -95,6 +96,50 @@ function readCachedState(){
  }
  return null;
 }
+function localDayKey(date=new Date()){
+ const year=date.getFullYear();
+ const month=String(date.getMonth()+1).padStart(2,'0');
+ const day=String(date.getDate()).padStart(2,'0');
+ return `${year}-${month}-${day}`;
+}
+function dailyTermKey(text){return String(text||'').trim().toLocaleLowerCase('sl')}
+function normalizeDailyTermsState(raw){
+ const today=localDayKey();
+ if(!raw||typeof raw!=='object'||raw.date!==today)return {date:today,terms:[]};
+ const terms=Array.isArray(raw.terms)?raw.terms.map(dailyTermKey).filter(Boolean):[];
+ return {date:today,terms:[...new Set(terms)].slice(0,720)};
+}
+function readDailyTermsState(){
+ try{
+  const value=localStorage.getItem(DAILY_TERMS_KEY);
+  return normalizeDailyTermsState(value?JSON.parse(value):null);
+ }catch(e){return normalizeDailyTermsState(null)}
+}
+let dailyTermsState=readDailyTermsState();
+function dailyTermsUsed(){
+ const normalized=normalizeDailyTermsState(dailyTermsState);
+ if(normalized.date!==dailyTermsState.date||normalized.terms.length!==dailyTermsState.terms.length){
+  dailyTermsState=normalized;
+  saveDailyTermsState();
+ }
+ return new Set(dailyTermsState.terms);
+}
+function saveDailyTermsState(){
+ dailyTermsState=normalizeDailyTermsState(dailyTermsState);
+ const payload=JSON.stringify(dailyTermsState);
+ try{localStorage.setItem(DAILY_TERMS_KEY,payload)}catch(e){}
+ const prefs=preferencesPlugin();
+ if(prefs?.set)prefs.set({key:DAILY_TERMS_KEY,value:payload}).catch(()=>{});
+}
+function rememberDailyTerm(text){
+ const key=dailyTermKey(text);
+ if(!key)return;
+ dailyTermsState=normalizeDailyTermsState(dailyTermsState);
+ if(dailyTermsState.terms.includes(key))return;
+ dailyTermsState.terms.push(key);
+ saveDailyTermsState();
+}
+
 function prepareLoadedState(loaded){
  const normalized=normalizeState(loaded);
  pendingResumeScreen=RESUMABLE_SCREENS.has(normalized.screen)?normalized.screen:null;
@@ -119,10 +164,23 @@ async function hydrateNativeState(){
  const prefs=preferencesPlugin();
  if(!prefs?.get)return;
  try{
-  const {value}=await prefs.get({key:STORAGE_KEY});
-  if(!value)return;
-  state=prepareLoadedState(JSON.parse(value));
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(storageSnapshot()));
+  const [gameResult,dailyResult]=await Promise.all([
+   prefs.get({key:STORAGE_KEY}),
+   prefs.get({key:DAILY_TERMS_KEY})
+  ]);
+  if(gameResult?.value){
+   state=prepareLoadedState(JSON.parse(gameResult.value));
+   localStorage.setItem(STORAGE_KEY,JSON.stringify(storageSnapshot()));
+  }
+  if(dailyResult?.value){
+   const nativeDaily=normalizeDailyTermsState(JSON.parse(dailyResult.value));
+   const localDaily=normalizeDailyTermsState(dailyTermsState);
+   dailyTermsState={
+    date:localDayKey(),
+    terms:[...new Set([...localDaily.terms,...nativeDaily.terms])].slice(0,720)
+   };
+   saveDailyTermsState();
+  }
  }catch(e){console.warn('Native state restore skipped',e)}
 }
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
