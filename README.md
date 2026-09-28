@@ -8,6 +8,9 @@
 - 3 težavnosti
 - RAZLOŽI / NARIŠI / POKAŽI
 - OPEN runde
+- opcijska imena igralcev in samodejna rotacija podajalca
+- opcijsko odštevanje 3–2–1 pred rundo
+- 8-sekundni razveljavi zadnji rezultat
 - nastavljivo izbijanje nasprotnikov
 - risanje neposredno na zaslon
 - jasne, oštevilčene figurice ekip
