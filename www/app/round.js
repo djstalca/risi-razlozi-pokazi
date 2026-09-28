@@ -121,9 +121,9 @@ function renderChallenge(app){
    >PRITISNI IN DRŽI ZA POJEM</button>
    <div class="termSeenHint" id="termSeenHint">Najprej si oglej pojem</div>
    <div class="termSwapRow">
-    \${state.termSwapUsed
-     ?\`<span class="termSwapUsed">Menjava pojma porabljena</span>\`
-     :\`<button class="secondary termSwapButton" id="swapTermButton" onclick="replaceChallengeTerm()" disabled aria-disabled="true">DRUG POJEM · 1×</button>\`}
+    ${state.termSwapUsed
+     ?`<span class="termSwapUsed">Menjava pojma porabljena</span>`
+     :`<button class="secondary termSwapButton" id="swapTermButton" onclick="replaceChallengeTerm()" disabled aria-disabled="true">DRUG POJEM · 1×</button>`}
    </div>
   </div>
   <p class="muted challengeRule">${meta.help}</p>
