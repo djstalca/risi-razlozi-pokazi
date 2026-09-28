@@ -34,8 +34,11 @@ Minimalna matrika pred v1.0:
 - nova igra z 2 ekipama,
 - nova igra s 3 ekipami,
 - nova igra s 4 ekipami,
+- ekipe brez imen igralcev,
+- ekipe z 1–8 igralci in pravilna rotacija podajalca,
 - imena ekip z znaki č, š, ž,
 - 30 / 45 / 60 / 90 sekund,
+- odštevanje 3–2–1 vključeno in izključeno,
 - izbijanje vključeno,
 - izbijanje izključeno,
 - vse tri težavnosti,
@@ -47,7 +50,10 @@ Minimalna matrika pred v1.0:
 - OPEN: nihče,
 - prihod na cilj z natančnim in preseženim številom polj,
 - več ekip na istem polju,
-- izbijanje z več ekipami na istem polju.
+- izbijanje z več ekipami na istem polju,
+- razveljavi uspeh/neuspeh v 8 sekundah,
+- razveljavi napačno izbrano ekipo pri OPEN,
+- razveljavi rezultat, ki bi sicer zaključil igro.
 
 ## Risanje
 
