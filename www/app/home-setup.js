@@ -49,6 +49,7 @@ function renderRules(app){
    <li><strong>Odštevanje 3–2–1</strong> lahko v nastavitvah vključiš ali izključiš. Ko je vključeno, se čas runde začne šele po odštevanju.</li>
    <li><strong>Igralci v ekipah</strong> so opcijski. Če vneseš imena, aplikacija po vsaki odigrani rundi samodejno zamenja podajalca.</li>
    <li><strong>Brez ponavljanja</strong>: isti pojem se na tej napravi isti koledarski dan ne prikaže dvakrat, tudi če začneš novo igro.</li>
+   <li><strong>Drug pojem</strong>: pred začetkom runde lahko pojem enkrat zamenjaš. Tudi zavrnjeni pojem se tisti dan ne ponovi.</li>
    <li><strong>Dolžino igre</strong> izbereš pred začetkom: Hitra 30, Klasična 40 ali Dolga 48 polj.</li>
    <li><strong>OPEN runda</strong>: ugibajo vsi. Če ugane aktivna ekipa, dobi 6 polj. Če ugane druga ekipa, dobi 4 polja, aktivna pa 2.</li>
    <li><strong>Izbijanje</strong> lahko pred igro vključiš ali izključiš. Ko je vključeno, uspešen običajni premik na nasprotnikovo polje nasprotnika pomakne eno polje nazaj.</li>
@@ -216,6 +217,8 @@ function resetRoundData(){
  state.roundDifficulty=null;
  state.openRound=false;
  state.openBag=[];
+ state.termSwapUsed=false;
+ state.stats=freshStats(state.teams.length);
  state.countdownEnd=null;
  state.timerEnd=null;
  state.remaining=null;
