@@ -33,8 +33,8 @@ function createGameContext(){
 
 test('board mode cycles explain/draw/act and has 48 playable fields', () => {
   const ctx = createGameContext();
-  assert.equal(vm.runInContext('BOARD_FIELDS', ctx), 48);
-  assert.equal(vm.runInContext('FINISH', ctx), 49);
+  assert.equal(vm.runInContext('activeBoardFields()', ctx), 48);
+  assert.equal(vm.runInContext('finishPosition()', ctx), 49);
   assert.equal(vm.runInContext('modeForPosition(0)', ctx), 'RAZLOŽI');
   assert.equal(vm.runInContext('modeForPosition(1)', ctx), 'RAZLOŽI');
   assert.equal(vm.runInContext('modeForPosition(2)', ctx), 'NARIŠI');
@@ -50,10 +50,10 @@ test('compact board keeps the last team on the lowest visible row', () => {
   assert.deepEqual(Array.from(vm.runInContext('visibleBoardRowIndexes([48,49],5)', ctx)), [9]);
 });
 
-test('small screens show four board rows while normal phones show five', () => {
+test('responsive board row count grows with available map space', () => {
   const ctx = createGameContext();
-  assert.equal(vm.runInContext('innerHeight=700; desiredBoardViewportRows()', ctx), 4);
-  assert.equal(vm.runInContext('innerHeight=900; desiredBoardViewportRows()', ctx), 5);
+  assert.equal(vm.runInContext('responsiveBoardRowCountFromSpace(220,350,4,10)', ctx), 3);
+  assert.equal(vm.runInContext('responsiveBoardRowCountFromSpace(340,350,4,10)', ctx), 5);
 });
 
 test('normal move bumps opponent back one field when enabled', () => {
@@ -64,7 +64,13 @@ test('normal move bumps opponent back one field when enabled', () => {
     state.teams = [{name:'A',pos:5},{name:'B',pos:8}];
     applyMove(0,3,true);
   `, ctx);
-  assert.deepEqual(JSON.parse(JSON.stringify(result)), { old: 5, pos: 8, bumped: [1], winner: false });
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), {
+    old: 5,
+    pos: 8,
+    bumped: [1],
+    bumpedDetails: [{team:1,from:8,pos:7}],
+    winner: false
+  });
   assert.equal(vm.runInContext('state.teams[1].pos', ctx), 7);
 });
 
