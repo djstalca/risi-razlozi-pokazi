@@ -1,3 +1,4 @@
+const RESULT_UNDO_MS=8000;
 function renderResult(app){
  app.className='app stageApp resultStageApp';
  const c=state.challenge;
@@ -29,6 +30,75 @@ function renderResult(app){
   </section>`;
  }
 }
+function resultUndoAvailable(){
+ return Boolean(state.undoResult&&Number(state.undoResult.expiresAt)>Date.now()&&state.undoResult.snapshot);
+}
+function armResultUndo(){
+ clearTimeout(undoExpiryTimer);
+ state.undoResult={
+  expiresAt:Date.now()+RESULT_UNDO_MS,
+  snapshot:{
+   teams:JSON.parse(JSON.stringify(state.teams)),
+   current:state.current,
+   challenge:state.challenge?JSON.parse(JSON.stringify(state.challenge)):null,
+   roundDifficulty:state.roundDifficulty,
+   openRound:state.openRound,
+   lastMove:state.lastMove,
+   winner:state.winner
+  }
+ };
+}
+function clearResultUndo(){
+ clearTimeout(undoExpiryTimer);
+ undoExpiryTimer=null;
+ state.undoResult=null;
+}
+function undoResultHtml(disabled=false){
+ if(!resultUndoAvailable())return '';
+ return `<div class="undoResultBar">
+  <span>Napačen rezultat?</span>
+  <button class="secondary small" onclick="undoLastResult()" ${disabled?'disabled':''}>RAZVELJAVI</button>
+ </div>`;
+}
+function scheduleUndoExpiry(){
+ clearTimeout(undoExpiryTimer);
+ if(!resultUndoAvailable()){
+  if(state.undoResult){state.undoResult=null;save()}
+  return;
+ }
+ const wait=Math.max(20,state.undoResult.expiresAt-Date.now()+30);
+ undoExpiryTimer=setTimeout(()=>{
+  if(resultUndoAvailable())return;
+  state.undoResult=null;save();
+  if(state.screen==='board'||state.screen==='winner')render();
+ },wait);
+}
+function undoLastResult(){
+ if(!resultUndoAvailable()){clearResultUndo();save();render();return}
+ const snapshot=state.undoResult.snapshot;
+ clearResultUndo();
+ state.teams=JSON.parse(JSON.stringify(snapshot.teams));
+ state.current=clamp(snapshot.current,0,state.teams.length-1);
+ state.challenge=snapshot.challenge?JSON.parse(JSON.stringify(snapshot.challenge)):null;
+ state.roundDifficulty=snapshot.roundDifficulty;
+ state.openRound=Boolean(snapshot.openRound);
+ state.lastMove=snapshot.lastMove??null;
+ state.winner=snapshot.winner??null;
+ state.countdownEnd=null;
+ state.timerEnd=null;
+ state.remaining=0;
+ state.screen='result';
+ moveAnimations=[];
+ moveVisualPositions=null;
+ moveAnimationRunning=false;
+ moveAnimationHighlight=null;
+ moveAnimationFrames=[];
+ moveAnimationFrameIndex=0;
+ clearTimeout(moveAnimationTimer);
+ challengeTermSeen=true;
+ save();render();
+}
+
 function applyMove(idx,points,allowBump){
  const finish=finishPosition();
  const team=state.teams[idx],old=team.pos;
@@ -74,8 +144,13 @@ function showWinningMove(idx){
 }
 function resolveNormal(success){
  moveAnimations=[];
- if(!success){nextTurn();return}
+ armResultUndo();
  const mover=state.current;
+ advancePresenter(mover);
+ if(!success){
+  state.lastMove=`${state.teams[mover].name}: brez premika.`;
+  nextTurn();return;
+ }
  const result=applyMove(mover,state.challenge.difficulty,true);
  queueMoveAnimation(mover,result);
  announceMove(mover,state.challenge.difficulty,result);
@@ -84,8 +159,10 @@ function resolveNormal(success){
 }
 function resolveOpen(idx){
  moveAnimations=[];
- if(idx<0){state.lastMove='OPEN runda: nihče ni uganil.';nextTurn();return}
+ armResultUndo();
  const active=state.current;
+ advancePresenter(active);
+ if(idx<0){state.lastMove='OPEN runda: nihče ni uganil.';nextTurn();return}
  if(idx===active){
   const result=applyMove(active,6,true);
   queueMoveAnimation(active,result);
@@ -107,7 +184,7 @@ function resolveOpen(idx){
 function nextTurn(){
  challengeTermSeen=false;
  state.current=(state.current+1)%state.teams.length;
- state.challenge=null;state.roundDifficulty=null;state.openRound=false;state.remaining=null;state.timerEnd=null;
+ state.challenge=null;state.roundDifficulty=null;state.openRound=false;state.countdownEnd=null;state.remaining=null;state.timerEnd=null;
  state.screen='board';save();render();
 }
 function finishGame(idx){state.winner=idx;state.screen='winner';save();render()}
@@ -124,10 +201,12 @@ function renderWinner(app){
   <div class="stack winnerRanking">
    ${ranking.map((t,i)=>`<div class="score"><strong>${i+1}. ${esc(t.name)}</strong><span>${t.pos>=finish?'CILJ':`${t.pos} / ${activeBoardFields()}`}</span></div>`).join('')}
   </div>
+  ${undoResultHtml()}
   <div class="stack">
    <button class="primary" style="width:100%" onclick="replaySameTeams()">PONOVI Z ISTIMI EKIPAMI</button>
    <button class="secondary" style="width:100%" onclick="editCurrentSetup()">SPREMENI NASTAVITVE</button>
   </div>
  </section>`;
+ scheduleUndoExpiry();
 }
 function resetConfirm(){if(confirm('Začnem novo igro? Trenutna igra bo izbrisana.'))newGameSetup()}
