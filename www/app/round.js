@@ -1,11 +1,12 @@
 function renderPrep(app){
  app.className='app stageApp';
- const t=state.teams[state.current],mode=modeForPosition(t.pos),meta=modeMeta(mode);
+ const t=state.teams[state.current],mode=modeForPosition(t.pos),meta=modeMeta(mode),presenter=teamPresenter(t);
  app.innerHTML=`
  ${gameTopbar(`<span class="badge compactModeBadge">${meta.icon} ${mode}</span>`)}
  <section class="card center stageCard difficultyCard">
   <div class="stageEyebrow">Na potezi</div>
   <h1>${esc(t.name)}</h1>
+  ${presenter?`<div class="presenterChip">🎙️ Podaja: <strong>${esc(presenter)}</strong></div>`:''}
   <p class="muted">Koliko tvegate v tej rundi?</p>
   <div class="difficultyGrid">
    <button class="success diffButton" onclick="chooseDifficulty(3)"><b>3</b><span>LAHKA</span></button>
@@ -77,12 +78,13 @@ function termRevealKey(event,show){
 }
 function renderChallenge(app){
  app.className='app challengeApp';
- const c=state.challenge,meta=modeMeta(c.mode),team=state.teams[state.current];
+ const c=state.challenge,meta=modeMeta(c.mode),team=state.teams[state.current],presenter=teamPresenter(team);
  const pointsLabel=`${c.difficulty} ${c.difficulty===5?'TOČK':'TOČKE'}`;
  app.innerHTML=`
  ${gameTopbar(state.openRound?`<span class="badge openBadge">OPEN RUNDA</span>`:'')}
  <section class="card center challengeCard">
   <div class="challengeMeta">${esc(team.name)} · ${meta.icon} ${c.mode} · ${pointsLabel}</div>
+  ${presenter?`<div class="presenterChip challengePresenter">🎙️ Podaja: <strong>${esc(presenter)}</strong></div>`:''}
   ${state.openRound?`<div class="badge openBadge challengeOpen">UGIBAJO VSE EKIPE</div>`:''}
   <div class="secretTermBox">
    <div class="secretHint">Telefon naj gleda samo podajalec.</div>
@@ -121,19 +123,59 @@ function beep(freq=760,duration=.07){
 }
 function startRound(){
  if(!challengeTermSeen)return;
- initAudio();lastBeepSecond=null;
- state.timerEnd=Date.now()+state.duration*1000;state.remaining=state.duration;
- state.screen=state.challenge.mode==='NARIŠI'?'draw':'timer';save();render();
+ initAudio();lastBeepSecond=null;lastCountdownSecond=null;
+ if(state.countdown){
+  state.countdownEnd=Date.now()+3000;
+  state.screen='countdown';save();render();return;
+ }
+ beginTimedRound();
+}
+function beginTimedRound(){
+ state.countdownEnd=null;
+ state.timerEnd=Date.now()+state.duration*1000;
+ state.remaining=state.duration;
+ state.screen=state.challenge.mode==='NARIŠI'?'draw':'timer';
+ save();render();
+}
+function renderCountdown(app){
+ app.className='app stageApp countdownStageApp';
+ const c=state.challenge,meta=modeMeta(c.mode),team=state.teams[state.current],presenter=teamPresenter(team);
+ const remaining=Math.max(1,Math.ceil((state.countdownEnd-Date.now())/1000));
+ app.innerHTML=`
+ ${gameTopbar(`<span class="badge compactModeBadge">${meta.icon} ${c.mode}</span>`)}
+ <section class="card center stageCard countdownCard">
+  <div class="stageEyebrow">${esc(team.name)}${presenter?` · Podaja: ${esc(presenter)}`:''}</div>
+  <div class="countdownLabel">PRIPRAVI SE</div>
+  <div class="countdownNumber" id="countdownNumber">${remaining}</div>
+  <div class="muted">Runda se začne samodejno.</div>
+ </section>`;
+ tickCountdown();
+ timerHandle=setInterval(tickCountdown,100);
+}
+function tickCountdown(){
+ const remaining=Math.max(0,Math.ceil((state.countdownEnd-Date.now())/1000));
+ const number=document.getElementById('countdownNumber');
+ if(number&&remaining>0)number.textContent=remaining;
+ if(remaining>0&&remaining!==lastCountdownSecond){
+  lastCountdownSecond=remaining;
+  beep(remaining===1?900:720,.055);
+  safeVibrate(25);
+ }
+ if(remaining<=0){
+  clearInterval(timerHandle);
+  beep(1050,.08);safeVibrate(55);
+  beginTimedRound();
+ }
 }
 function renderTimer(app){
  app.className='app stageApp timerStageApp';
- const c=state.challenge,meta=modeMeta(c.mode);
+ const c=state.challenge,meta=modeMeta(c.mode),team=state.teams[state.current],presenter=teamPresenter(team);
  const remaining=state.remaining??state.duration;
  const progress=Math.max(0,Math.min(1,remaining/state.duration));
  app.innerHTML=`
  ${gameTopbar(state.openRound?`<span class="badge openBadge">OPEN</span>`:`<span class="badge compactModeBadge">${meta.icon} ${c.mode}</span>`)}
  <section class="card center stageCard timerCard">
-  <div class="stageEyebrow">${state.openRound?'Vse ekipe ugibajo':esc(state.teams[state.current].name)}</div>
+  <div class="stageEyebrow">${state.openRound?'Vse ekipe ugibajo':esc(team.name)}${presenter?` · Podaja: ${esc(presenter)}`:''}</div>
   <div class="timerRing ${remaining<=10?'low':''} ${remaining<=5?'urgent':''}" id="timerRing" style="--timer-progress:${progress*360}deg">
    <div class="timer" id="timer">${remaining}</div>
   </div>
@@ -179,4 +221,4 @@ function tick(){
   state.screen='result';state.timerEnd=null;save();render();
  }
 }
-function finishTimer(){clearInterval(timerHandle);state.screen='result';state.timerEnd=null;save();render()}
+function finishTimer(){clearInterval(timerHandle);state.screen='result';state.countdownEnd=null;state.timerEnd=null;save();render()}

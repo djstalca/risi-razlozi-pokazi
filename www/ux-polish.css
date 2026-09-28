@@ -143,6 +143,36 @@
 .segmentButton span{display:block;font-size:11px;margin-top:2px;color:inherit}
 .gameLengthSegments .segmentButton{min-height:58px}
 .teamNames{gap:10px}
+.teamSetupBlock{
+  display:grid;
+  gap:8px;
+  padding:10px;
+  border:1px solid var(--line);
+  border-left:3px solid var(--team-color,var(--accent));
+  border-radius:16px;
+  background:#15171c;
+}
+.teamSetupBlock .teamRow{margin:0}
+.memberEditor{display:grid;gap:8px;padding-left:42px}
+.memberEditorHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:900}
+.memberEditorHeader small{color:var(--muted);font-weight:700}
+.memberEditorHeader button{min-height:34px;padding:6px 9px;font-size:10px}
+.memberList{display:grid;gap:6px}
+.memberRow{display:grid;grid-template-columns:24px minmax(0,1fr) 36px;gap:6px;align-items:center}
+.memberNumber{
+  width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+  background:var(--panel2);color:var(--muted);font-size:10px;font-weight:900
+}
+.memberRow input{min-width:0;min-height:40px;padding:8px 10px}
+.memberRemove{min-width:36px;width:36px;min-height:36px;padding:0;font-size:20px;line-height:1}
+.presenterChip{
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  margin:0 auto 8px;padding:7px 11px;border-radius:999px;
+  background:#15171c;border:1px solid var(--line);font-size:12px;color:var(--muted)
+}
+.presenterChip strong{color:var(--text)}
+.presenterLine{display:block;margin-top:2px;color:var(--muted);font-size:11px;font-weight:800}
+
 .settingRow{
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
@@ -209,6 +239,14 @@
 .challengeStart{min-height:58px}
 .challengeStart:disabled{opacity:.38}
 
+.countdownCard{max-width:680px;align-self:center}
+.countdownLabel{font-size:14px;font-weight:1000;letter-spacing:.14em;color:var(--muted);margin-top:4px}
+.countdownNumber{
+  font-size:clamp(120px,38vw,220px);line-height:.95;font-weight:1000;
+  margin:18px 0 20px;letter-spacing:-.06em;animation:countdownPop .55s ease-out
+}
+@keyframes countdownPop{0%{transform:scale(.82);opacity:.35}55%{transform:scale(1.06);opacity:1}100%{transform:scale(1)}}
+
 .timerCard{max-width:680px;align-self:center}
 .timerRing{
   --timer-progress:360deg;
@@ -244,6 +282,13 @@
 .resultCard h2{font-size:clamp(28px,7vw,38px);margin:12px 0 18px}
 .resultActions{gap:12px}
 .resultActions button{min-height:64px}
+.undoResultBar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:7px 9px;border:1px solid #6b5b2a;border-radius:12px;
+  background:#2b250e;color:#f4e3a1;font-size:11px;font-weight:850
+}
+.undoResultBar button{min-height:34px;padding:6px 10px;white-space:nowrap}
+.winnerCard>.undoResultBar{margin:16px 0 0}
 
 .winnerApp .winnerCard{max-width:680px;margin-inline:auto}
 .winnerCard h1{font-size:clamp(38px,10vw,70px);margin:16px 0}
@@ -273,11 +318,14 @@
   .secretWord{padding:16px 10px}
   .setupCard{padding:16px}
   .setupStack{gap:15px}
+  .teamSetupBlock{padding:8px}
+  .memberEditor{padding-left:0}
   .segmented{gap:4px;padding:4px}
   .segmentButton{min-height:46px;padding:8px 5px;font-size:14px}
   .gameLengthSegments .segmentButton{min-height:54px}
   .challengeCard{padding:16px}
   .challengeMeta{font-size:12px}
+  .countdownNumber{font-size:clamp(110px,36vw,180px)}
   .timerRing{width:min(58vw,210px)}
 }
 @media(max-width:380px){
@@ -287,5 +335,5 @@
 }
 
 @media(prefers-reduced-motion:reduce){
-  .boardArrive,.moveLand,.moveBump,.movedPawn,.bumpedPawn,.timerRing.urgent{animation:none!important}
+  .boardArrive,.moveLand,.moveBump,.movedPawn,.bumpedPawn,.timerRing.urgent,.countdownNumber{animation:none!important}
 }

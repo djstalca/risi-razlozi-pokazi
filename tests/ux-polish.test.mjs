@@ -56,19 +56,20 @@ test('replay keeps teams and preferences including game length but resets gamepl
   const ctx = createContext();
   const result = vm.runInContext(`
     state=freshState();
-    state.teams=[{name:'Mavrice',pos:22},{name:'Volkovi',pos:17}];
+    state.teams=[{name:'Mavrice',pos:22,members:['Ana','Bine'],presenterIndex:1},{name:'Volkovi',pos:17,members:[],presenterIndex:0}];
     state.duration=90;state.gameLength=30;state.bumping=false;state.sound=false;state.vibration=false;
     state.used={'3:RAZLOŽI':['semafor']};state.winner=0;state.lastMove='x';
     replaySameTeams();
     JSON.stringify(state);
   `, ctx);
   const state = JSON.parse(result);
-  assert.deepEqual(state.teams, [{name:'Mavrice',pos:0},{name:'Volkovi',pos:0}]);
+  assert.deepEqual(state.teams, [{name:'Mavrice',pos:0,members:['Ana','Bine'],presenterIndex:0},{name:'Volkovi',pos:0,members:[],presenterIndex:0}]);
   assert.equal(state.duration, 90);
   assert.equal(state.gameLength, 30);
   assert.equal(state.bumping, false);
   assert.equal(state.sound, false);
   assert.equal(state.vibration, false);
+  assert.equal(state.countdown, true);
   assert.deepEqual(state.used, {});
   assert.equal(state.screen, 'board');
   assert.equal(state.winner, null);
