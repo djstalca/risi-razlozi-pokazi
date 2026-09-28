@@ -205,7 +205,7 @@ function finishMoveAnimation(){
 function renderBoard(app){
  app.className='app gameBoardApp';
  if(moveAnimations.length&&!moveAnimationRunning&&!moveVisualPositions)prepareMoveAnimation();
- const t=state.teams[state.current];
+ const t=state.teams[state.current],presenter=teamPresenter(t);
  const mode=modeForPosition(displayTeamPosition(state.current)),meta=modeMeta(mode);
  const visibleRows=viewportBoardRows(lastBoardViewportRowCount||5);
  const animating=moveAnimationRunning||moveAnimations.length>0||Boolean(moveVisualPositions);
@@ -213,6 +213,7 @@ function renderBoard(app){
  ${gameTopbar(`<button class="secondary small" onclick="resetConfirm()" ${animating?'disabled':''}>Nova igra</button>`)}
  ${scoresHtml()}
  ${state.lastMove?`<div class="compactNotice">${esc(state.lastMove)}</div>`:''}
+ ${undoResultHtml(animating)}
  <section class="card boardViewportCard">
   <div class="boardToolbar">
    <span>${gameLengthLabel()} · ${activeBoardFields()} polj</span>
@@ -222,7 +223,7 @@ function renderBoard(app){
  </section>
  <section class="card turnCard" style="--active-team-color:${teamColor(state.current)}">
   <div class="turnSummary">
-   <div><span class="turnLabel">${animating?'Premik poteka':'Na potezi'}</span><strong>${esc(t.name)}</strong></div>
+   <div><span class="turnLabel">${animating?'Premik poteka':'Na potezi'}</span><strong>${esc(t.name)}</strong>${presenter?`<span class="presenterLine">Podaja: ${esc(presenter)}</span>`:''}</div>
    <div class="badge">${meta.icon} ${mode}</div>
   </div>
   <button class="primary turnAction" onclick="prepareRound()" ${animating?'disabled':''}>${animating?'PREMIK ...':'IZBERI TEŽAVNOST'}</button>
@@ -233,9 +234,11 @@ function renderBoard(app){
   requestAnimationFrame(startPreparedMoveAnimation);
  }
  if(!fullMapOpen)scheduleResponsiveBoardMeasure();
+ scheduleUndoExpiry();
 }
 function prepareRound(){
  if(moveAnimationRunning||moveAnimations.length)return;
+ clearResultUndo();
  challengeTermSeen=false;
  fullMapOpen=false;state.lastMove=null;state.roundDifficulty=null;state.challenge=null;state.openRound=false;state.screen='prep';save();render();
 }
