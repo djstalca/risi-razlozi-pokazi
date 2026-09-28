@@ -53,11 +53,16 @@ test('expanded library has 720 unique terms and 80 in every mode/difficulty buck
 test('difficulty curation keeps clear progression examples',()=>{
   const terms=loadTerms();
   const find=(text)=>terms.find(t=>t.text===text);
-  assert.deepEqual(find('helikopter'),{text:'helikopter',difficulty:3,mode:'NARIŠI'});
-  assert.deepEqual(find('teleskop'),{text:'teleskop',difficulty:4,mode:'NARIŠI'});
-  assert.deepEqual(find('sončev sistem'),{text:'sončev sistem',difficulty:5,mode:'NARIŠI'});
-  assert.deepEqual(find('prometna nesreča'),{text:'prometna nesreča',difficulty:4,mode:'RAZLOŽI'});
-  assert.deepEqual(find('gravitacija'),{text:'gravitacija',difficulty:5,mode:'RAZLOŽI'});
+  assert.equal(find('helikopter')?.difficulty,3);
+  assert.equal(find('helikopter')?.mode,'NARIŠI');
+  assert.equal(find('teleskop')?.difficulty,4);
+  assert.equal(find('teleskop')?.mode,'NARIŠI');
+  assert.equal(find('sončev sistem')?.difficulty,5);
+  assert.equal(find('sončev sistem')?.mode,'NARIŠI');
+  assert.equal(find('prometna nesreča')?.difficulty,4);
+  assert.equal(find('prometna nesreča')?.mode,'RAZLOŽI');
+  assert.equal(find('gravitacija')?.difficulty,5);
+  assert.equal(find('gravitacija')?.mode,'RAZLOŽI');
 });
 
 test('a term cannot be selected twice on the same local day even across game resets',()=>{
