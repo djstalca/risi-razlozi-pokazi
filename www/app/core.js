@@ -5,8 +5,8 @@ const DAILY_TERMS_KEY = 'risi-razlozi-pokazi-daily-terms-v1';
 const LEGACY_STORAGE_KEYS = ['akcija-game-v6'];
 const MAX_BOARD_FIELDS = 48;
 const VALID_GAME_LENGTHS = new Set([30,40,48]);
-const VALID_SCREENS = new Set(['home','rules','settings','setup','board','prep','challenge','timer','draw','result','winner']);
-const RESUMABLE_SCREENS = new Set(['board','prep','challenge','timer','draw','result','winner']);
+const VALID_SCREENS = new Set(['home','rules','settings','setup','board','prep','challenge','countdown','timer','draw','result','winner']);
+const RESUMABLE_SCREENS = new Set(['board','prep','challenge','countdown','timer','draw','result','winner']);
 const PASSIVE_SCREENS = new Set(['home','rules','settings']);
 const VALID_DURATIONS = new Set([30,45,60,90]);
 
@@ -14,6 +14,8 @@ let pendingResumeScreen = null;
 let timerHandle = null;
 let canvasHistory = [];
 let lastBeepSecond = null;
+let lastCountdownSecond = null;
+let undoExpiryTimer = null;
 let audioCtx = null;
 let moveAnimations = [];
 let moveVisualPositions = null;
@@ -25,22 +27,28 @@ function freshState(){
  return {
   version:1,
   screen:'home',
-  teams:[{name:'Ekipa 1',pos:0},{name:'Ekipa 2',pos:0}],
+  teams:[
+   {name:'Ekipa 1',pos:0,members:[],presenterIndex:0},
+   {name:'Ekipa 2',pos:0,members:[],presenterIndex:0}
+  ],
   current:0,
   duration:60,
   gameLength:48,
   bumping:true,
   sound:true,
   vibration:true,
+  countdown:true,
   used:{},
   challenge:null,
   roundDifficulty:null,
   openRound:false,
   openBag:[],
+  countdownEnd:null,
   timerEnd:null,
   remaining:null,
   winner:null,
-  lastMove:null
+  lastMove:null,
+  undoResult:null
  };
 }
 function clamp(n,min,max){return Math.min(max,Math.max(min,Number.isFinite(Number(n))?Number(n):min))}
@@ -56,26 +64,42 @@ function normalizeState(raw){
  const next={...base,...raw,version:1};
  next.gameLength=VALID_GAME_LENGTHS.has(Number(raw.gameLength))?Number(raw.gameLength):48;
  const finish=next.gameLength+1;
- next.teams=Array.isArray(raw.teams)?raw.teams.slice(0,4).map((t,i)=>({
-  name:String(t?.name||`Ekipa ${i+1}`).trim().slice(0,40)||`Ekipa ${i+1}`,
-  pos:clamp(t?.pos,0,finish)
- })):base.teams;
- while(next.teams.length<2)next.teams.push({name:`Ekipa ${next.teams.length+1}`,pos:0});
+ next.teams=Array.isArray(raw.teams)?raw.teams.slice(0,4).map((t,i)=>{
+  const members=Array.isArray(t?.members)
+   ?t.members.map(name=>String(name||'').trim().slice(0,40)).filter(Boolean).slice(0,8)
+   :[];
+  return {
+   name:String(t?.name||`Ekipa ${i+1}`).trim().slice(0,40)||`Ekipa ${i+1}`,
+   pos:clamp(t?.pos,0,finish),
+   members,
+   presenterIndex:members.length?clamp(t?.presenterIndex,0,members.length-1):0
+  };
+ }):base.teams;
+ while(next.teams.length<2)next.teams.push({name:`Ekipa ${next.teams.length+1}`,pos:0,members:[],presenterIndex:0});
  next.current=clamp(raw.current,0,next.teams.length-1);
  next.duration=VALID_DURATIONS.has(Number(raw.duration))?Number(raw.duration):60;
  next.bumping=raw.bumping!==false;
  next.sound=raw.sound!==false;
  next.vibration=raw.vibration!==false;
+ next.countdown=raw.countdown!==false;
  next.used=raw.used&&typeof raw.used==='object'&&!Array.isArray(raw.used)?raw.used:{};
  next.openBag=Array.isArray(raw.openBag)?raw.openBag.filter(v=>typeof v==='boolean').slice(0,6):[];
  next.openRound=Boolean(raw.openRound);
+ next.countdownEnd=Number.isFinite(Number(raw.countdownEnd))?Number(raw.countdownEnd):null;
  next.roundDifficulty=[3,4,5].includes(Number(raw.roundDifficulty))?Number(raw.roundDifficulty):null;
  next.winner=Number.isInteger(raw.winner)&&raw.winner>=0&&raw.winner<next.teams.length?raw.winner:null;
  next.lastMove=typeof raw.lastMove==='string'?raw.lastMove.slice(0,240):null;
+ next.undoResult=raw.undoResult&&typeof raw.undoResult==='object'&&Number(raw.undoResult.expiresAt)>Date.now()&&raw.undoResult.snapshot&&typeof raw.undoResult.snapshot==='object'
+  ?raw.undoResult
+  :null;
  next.screen=VALID_SCREENS.has(raw.screen)?raw.screen:'home';
  if(next.challenge){
   const c=next.challenge;
   if(!c||typeof c.text!=='string'||![3,4,5].includes(Number(c.difficulty))||!MODES.includes(c.mode))next.challenge=null;
+ }
+ if(next.screen==='countdown'&&(!next.challenge||!Number.isFinite(Number(next.countdownEnd))||Number(next.countdownEnd)<=Date.now())){
+  next.screen=next.challenge?'challenge':'board';
+  next.countdownEnd=null;
  }
  if((next.screen==='timer'||next.screen==='draw')&&(!Number.isFinite(Number(next.timerEnd))||Number(next.timerEnd)<=Date.now())){
   next.screen=next.challenge?'result':'board';
@@ -186,6 +210,16 @@ async function hydrateNativeState(){
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function teamColor(i){return COLORS[i%COLORS.length]}
+function teamPresenter(team){
+ if(!team||!Array.isArray(team.members)||!team.members.length)return null;
+ const index=clamp(team.presenterIndex,0,team.members.length-1);
+ return team.members[index]||null;
+}
+function advancePresenter(teamIndex){
+ const team=state.teams[teamIndex];
+ if(!team||!Array.isArray(team.members)||!team.members.length){if(team)team.presenterIndex=0;return}
+ team.presenterIndex=(clamp(team.presenterIndex,0,team.members.length-1)+1)%team.members.length;
+}
 function modeForPosition(pos){if(pos<=0)return 'RAZLOŽI';return MODES[(pos-1)%3]}
 function modeMeta(mode){
  if(mode==='NARIŠI')return {icon:'✏️',cls:'draw',help:'Riši brez črk in številk. Ne govori in ne gestikuliraj.'};
@@ -213,6 +247,7 @@ function render(){
  if(state.screen==='board')return renderBoard(app);
  if(state.screen==='prep')return renderPrep(app);
  if(state.screen==='challenge')return renderChallenge(app);
+ if(state.screen==='countdown')return renderCountdown(app);
  if(state.screen==='timer')return renderTimer(app);
  if(state.screen==='draw')return renderDraw(app);
  if(state.screen==='result')return renderResult(app);
