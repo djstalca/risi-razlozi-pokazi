@@ -200,6 +200,14 @@ function removeTeamMember(teamIndex,memberIndex){
  team.presenterIndex=team.members.length?clamp(team.presenterIndex,0,team.members.length-1):0;
  save();render();
 }
+function cleanTeamMembers(){
+ state.teams.forEach(team=>{
+  team.members=Array.isArray(team.members)
+   ?team.members.map(name=>String(name||'').trim().slice(0,40)).filter(Boolean).slice(0,8)
+   :[];
+  team.presenterIndex=team.members.length?clamp(team.presenterIndex,0,team.members.length-1):0;
+ });
+}
 function resetRoundData(){
  state.current=0;
  state.teams.forEach(t=>{t.pos=0;t.presenterIndex=0});
@@ -223,6 +231,7 @@ function resetRoundData(){
 }
 function beginGame(){
  pendingResumeScreen=null;
+ cleanTeamMembers();
  resetRoundData();
  state.screen='board';save();render();
 }
