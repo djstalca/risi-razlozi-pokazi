@@ -36,7 +36,7 @@ Za igro pripravimo najmanj 6 portretnih screenshotov pri 1080×1920 ali višje:
 1. Začetni zaslon – **Slovenska družabna igra**
 2. Nastavitve 2–4 ekip – **Pripravljeni v manj kot minuti**
 3. Igralna plošča – **Riši, razloži ali pokaži**
-4. Zaslon s pojmom/težavnostjo – **450 slovenskih pojmov**
+4. Zaslon s pojmom/težavnostjo – **720 slovenskih pojmov**
 5. Risalna površina – **Riši neposredno na zaslon**
 6. OPEN runda – **Vsi proti vsem**
 
