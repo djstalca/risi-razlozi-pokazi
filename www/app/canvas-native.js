@@ -78,6 +78,13 @@ async function setupNativeIntegration(){
     if(typeof fullMapOpen!=='undefined'&&fullMapOpen){closeFullMap();return;}
     pendingResumeScreen='board';state.screen='home';save();render();return;
    }
+   if(state.screen==='countdown'){
+    clearInterval(timerHandle);
+    state.countdownEnd=null;
+    challengeTermSeen=true;
+    state.screen='challenge';
+    save();render();return;
+   }
    if(state.screen==='timer'||state.screen==='draw'){
     if(confirm('Končam trenutno rundo in pokažem rezultat?'))finishTimer();
     return;
@@ -88,6 +95,7 @@ async function setupNativeIntegration(){
    state.challenge=null;
    state.roundDifficulty=null;
    state.openRound=false;
+   state.countdownEnd=null;
    state.remaining=null;
    state.timerEnd=null;
    state.screen='board';
