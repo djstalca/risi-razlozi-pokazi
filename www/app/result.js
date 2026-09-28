@@ -159,6 +159,7 @@ function gameSummaryHtml(ranking){
      <div class="summaryTeamTitle"><strong>${esc(t.name)}</strong><span>${stats.pointsEarned} točk</span></div>
      <div class="summaryMetrics">
       <span>Runde <b>${stats.rounds}</b></span>
+      <span>Uspelo <b>${stats.normalWins}</b></span>
       <span>OPEN <b>${stats.openGuesses}</b></span>
       <span>3 / 4 / 5 <b>${stats.difficultyWins[3]} / ${stats.difficultyWins[4]} / ${stats.difficultyWins[5]}</b></span>
      </div>
