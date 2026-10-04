@@ -67,13 +67,13 @@ Screenshoti morajo nastati iz dejanske aplikacije; načrt je v `docs/STORE_ASSET
 
 ## Privacy policy
 
-Besedilo je pripravljeno v `docs/PRIVACY_POLICY.md` in kot HTML v `www/privacy.html`.
+Besedilo je pripravljeno v `docs/PRIVACY_POLICY.md` in kot HTML v `www/privacy.html`. Pravilnik je dostopen tudi znotraj aplikacije prek **Nastavitve → Pravilnik o zasebnosti**.
 
 Pred oddajo potrebujemo:
-1. javni podporni/kontaktni e-mail,
+1. neposredni javni kontakt za vprašanja o zasebnosti in podporo,
 2. javno HTTPS povezavo do pravilnika o zasebnosti.
 
-Repo je zaseben, zato datoteka v zasebnem GitHub repozitoriju sama po sebi ni ustrezen javni Privacy Policy URL. Dokument lahko objavimo na tvoji domeni ali v ločenem javnem statičnem repozitoriju/hostingu.
+Repozitorij je trenutno javen, vendar URL datoteke v GitHub repozitoriju ni mišljen kot končni Play Store Privacy Policy URL. Za javno izdajo objavi `www/privacy.html` kot običajno HTTPS spletno stran, na primer prek GitHub Pages ali lastne domene.
 
 ## Release
 
@@ -100,7 +100,9 @@ android/app/build/outputs/bundle/release/app-release.aab
 
 ## Test track
 
-Najprej uporabi **Internal testing** za svoje naprave in najbližje testerje. Če Play Console za tvoj tip osebnega developer računa zahteva dodatno closed-testing obdobje pred Production accessom, sledi točno prikazanim zahtevam v tvojem Play Console računu.
+Najprej uporabi **Internal testing** za svoje naprave in najbližje testerje.
+
+Za osebni developer račun, ustvarjen po **13. novembru 2023**, Google Play pred dostopom do Production trenutno zahteva **Closed testing z najmanj 12 testerji, ki so vključeni neprekinjeno vsaj 14 dni**. Načrt za ta korak je v `docs/CLOSED_TEST_PLAN.md`.
 
 ## Kaj je namensko izven repozitorija
 
