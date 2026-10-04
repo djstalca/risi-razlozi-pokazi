@@ -14,7 +14,7 @@ Package ID: **`si.djstalca.risirazlozipokazi`**
 - [x] Android lint + test + debug build gate
 - [x] avtomatski JS syntax gate
 - [x] avtomatski game-rule testi
-- [x] avtomatski quality gate za 450 slovenskih pojmov
+- [x] avtomatski quality gate za 720 slovenskih pojmov
 - [x] Continue Game / robusten restore stanja
 - [x] Android Back obnašanje
 - [x] keep-screen-on med uporabo aplikacije
@@ -32,6 +32,7 @@ Package ID: **`si.djstalca.risirazlozipokazi`**
 - [x] Data Safety osnutek
 - [x] Content Rating osnutek
 - [x] Privacy Policy Markdown + HTML
+- [x] Pravilnik o zasebnosti dostopen znotraj aplikacije
 - [x] testni načrt
 
 ## Potrebujemo pred javno objavo
@@ -49,7 +50,7 @@ Package ID: **`si.djstalca.risirazlozipokazi`**
 - [ ] končni Data Safety obrazec
 - [ ] App access: brez prijave
 - [ ] Ads declaration: No
-- [ ] po potrebi Closed testing glede na zahteve konkretnega developer računa
+- [ ] če je osebni developer račun ustvarjen po 13. 11. 2023: Closed testing z najmanj 12 testerji, neprekinjeno 14 dni
 
 ## Release gate
 
