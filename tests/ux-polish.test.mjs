@@ -153,6 +153,11 @@ test('movement queue describes every intermediate field', () => {
   assert.deepEqual(frames.map(f=>f.pos),[3,4,5,6]);
 });
 
+test('Android back returns from privacy to settings', () => {
+  const native=fs.readFileSync('www/app/canvas-native.js','utf8');
+  assert.match(native,/state\.screen==='privacy'[\s\S]*state\.screen='settings'/);
+});
+
 test('board layout no longer pushes the turn card to the bottom', () => {
   const css=fs.readFileSync('www/board-viewport.css','utf8');
   assert.doesNotMatch(css,/\.turnCard\{[^}]*margin-top\s*:\s*auto/);
