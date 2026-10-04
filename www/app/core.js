@@ -5,9 +5,9 @@ const DAILY_TERMS_KEY = 'risi-razlozi-pokazi-daily-terms-v1';
 const LEGACY_STORAGE_KEYS = ['akcija-game-v6'];
 const MAX_BOARD_FIELDS = 48;
 const VALID_GAME_LENGTHS = new Set([30,40,48]);
-const VALID_SCREENS = new Set(['home','rules','settings','setup','board','prep','challenge','countdown','timer','draw','result','winner']);
+const VALID_SCREENS = new Set(['home','rules','settings','privacy','setup','board','prep','challenge','countdown','timer','draw','result','winner']);
 const RESUMABLE_SCREENS = new Set(['board','prep','challenge','countdown','timer','draw','result','winner']);
-const PASSIVE_SCREENS = new Set(['home','rules','settings']);
+const PASSIVE_SCREENS = new Set(['home','rules','settings','privacy']);
 const VALID_DURATIONS = new Set([30,45,60,90]);
 
 let pendingResumeScreen = null;
@@ -299,6 +299,7 @@ function render(){
  if(state.screen==='home')return renderHome(app);
  if(state.screen==='rules')return renderRules(app);
  if(state.screen==='settings')return renderSettings(app);
+ if(state.screen==='privacy')return renderPrivacy(app);
  if(state.screen==='setup')return renderSetup(app);
  if(state.screen==='board')return renderBoard(app);
  if(state.screen==='prep')return renderPrep(app);
