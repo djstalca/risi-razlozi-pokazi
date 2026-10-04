@@ -71,6 +71,9 @@ async function setupNativeIntegration(){
     if(confirm('Zaprem igro?'))await appPlugin.exitApp();
     return;
    }
+   if(state.screen==='privacy'){
+    state.screen='settings';save();render();return;
+   }
    if(state.screen==='rules'||state.screen==='settings'||state.screen==='setup'){
     state.screen='home';save();render();return;
    }
