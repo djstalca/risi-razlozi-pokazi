@@ -52,6 +52,31 @@ test('settings screen does not replace an unfinished game snapshot', () => {
   assert.equal(screen, 'board');
 });
 
+test('privacy policy is accessible from settings without replacing an unfinished game snapshot', () => {
+  const ctx = createContext();
+  const settingsHtml = vm.runInContext(`
+    state=freshState();
+    state.screen='settings';
+    const app={innerHTML:''};
+    renderSettings(app);
+    app.innerHTML;
+  `, ctx);
+  assert.match(settingsHtml, /PRAVILNIK O ZASEBNOSTI/);
+
+  const privacyHtml = vm.runInContext(`
+    state=freshState();
+    state.screen='privacy';
+    pendingResumeScreen='board';
+    const app={innerHTML:''};
+    renderPrivacy(app);
+    JSON.stringify({html:app.innerHTML,saved:storageSnapshot().screen});
+  `, ctx);
+  const parsed = JSON.parse(privacyHtml);
+  assert.match(parsed.html, /Hramba in izbris/);
+  assert.match(parsed.html, /Android dovoljenja za dostop do interneta/);
+  assert.equal(parsed.saved, 'board');
+});
+
 test('replay keeps teams and preferences including game length but resets gameplay', () => {
   const ctx = createContext();
   const result = vm.runInContext(`
