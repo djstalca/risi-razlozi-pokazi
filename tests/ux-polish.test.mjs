@@ -67,9 +67,9 @@ test('privacy policy is accessible from settings without replacing an unfinished
     state=freshState();
     state.screen='privacy';
     pendingResumeScreen='board';
-    const app={innerHTML:''};
-    renderPrivacy(app);
-    JSON.stringify({html:app.innerHTML,saved:storageSnapshot().screen});
+    const privacyApp={innerHTML:''};
+    renderPrivacy(privacyApp);
+    JSON.stringify({html:privacyApp.innerHTML,saved:storageSnapshot().screen});
   `, ctx);
   const parsed = JSON.parse(privacyHtml);
   assert.match(parsed.html, /Hramba in izbris/);
