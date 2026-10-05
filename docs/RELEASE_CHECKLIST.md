@@ -38,7 +38,7 @@ Package ID: **`si.djstalca.risirazlozipokazi`**
 ## Potrebujemo pred javno objavo
 
 - [ ] potrdi, da package ID `si.djstalca.risirazlozipokazi` ostane dokončen
-- [ ] javni support/kontaktni e-mail za Privacy Policy in Play listing
+- [x] javni support/kontaktni e-mail za Privacy Policy in Play listing: `djstalca@gmail.com`
 - [ ] javni HTTPS Privacy Policy URL
 - [ ] Play Console developer account in verifikacija
 - [ ] zasebni upload signing key + varna backup kopija
