@@ -65,3 +65,6 @@ Ne
 
 ## Nakupi v aplikaciji
 Ne v različici 1.0
+
+## Kontakt za podporo
+djstalca@gmail.com
