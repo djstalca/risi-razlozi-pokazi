@@ -97,7 +97,7 @@ function renderPrivacy(app){
  ${topbar(`<button class="secondary small" onclick="setScreen('settings')">Nazaj</button>`)}
  <section class="card privacyCard">
   <h2>Pravilnik o zasebnosti</h2>
-  <p class="muted">Zadnja posodobitev: 4. oktober 2026</p>
+  <p class="muted">Zadnja posodobitev: 5. oktober 2026</p>
 
   <h3>Kako aplikacija uporablja podatke</h3>
   <p><strong>Riši, razloži, pokaži</strong> deluje lokalno na tvoji napravi. Aplikacija ne zahteva uporabniškega računa, ne uporablja oglasov ali analitike in podatkov ne pošilja razvijalcu ali tretjim osebam.</p>
@@ -118,7 +118,7 @@ function renderPrivacy(app){
   <p>Aplikacija ne zbira osebnih podatkov otrok ali drugih uporabnikov.</p>
 
   <h3>Kontakt</h3>
-  <p>Pred javno objavo bo tukaj dodan neposredni kontakt za vprašanja o zasebnosti. Isti kontakt bo naveden tudi na strani aplikacije v Google Play.</p>
+  <p>Za vprašanja o zasebnosti ali podporo piši na <strong>djstalca@gmail.com</strong>.</p>
  </section>`;
 }
 
