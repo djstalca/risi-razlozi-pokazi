@@ -19,7 +19,7 @@ Za različico 1.0 aplikacije **Riši, razloži, pokaži**:
 ## Lokalni podatki
 
 Na napravi se zaradi nadaljevanja igre lahko lokalno shranijo:
-- imena ekip,
+- imena ekip in igralcev,
 - pozicije ekip,
 - uporabljeni pojmi,
 - nastavitve igre,

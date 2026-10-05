@@ -52,6 +52,32 @@ test('settings screen does not replace an unfinished game snapshot', () => {
   assert.equal(screen, 'board');
 });
 
+test('privacy policy is accessible from settings without replacing an unfinished game snapshot', () => {
+  const ctx = createContext();
+  const settingsHtml = vm.runInContext(`
+    state=freshState();
+    state.screen='settings';
+    const app={innerHTML:''};
+    renderSettings(app);
+    app.innerHTML;
+  `, ctx);
+  assert.match(settingsHtml, /PRAVILNIK O ZASEBNOSTI/);
+
+  const privacyHtml = vm.runInContext(`
+    state=freshState();
+    state.screen='privacy';
+    pendingResumeScreen='board';
+    const privacyApp={innerHTML:''};
+    renderPrivacy(privacyApp);
+    JSON.stringify({html:privacyApp.innerHTML,saved:storageSnapshot().screen});
+  `, ctx);
+  const parsed = JSON.parse(privacyHtml);
+  assert.match(parsed.html, /Hramba in izbris/);
+  assert.match(parsed.html, /Android dovoljenja za dostop do interneta/);
+  assert.match(parsed.html, /djstalca@gmail\.com/);
+  assert.equal(parsed.saved, 'board');
+});
+
 test('replay keeps teams and preferences including game length but resets gameplay', () => {
   const ctx = createContext();
   const result = vm.runInContext(`
@@ -126,6 +152,11 @@ test('movement queue describes every intermediate field', () => {
     const result=applyMove(0,4,true);queueMoveAnimation(0,result);prepareMoveAnimation();JSON.stringify(moveAnimationFrames)
   `,ctx));
   assert.deepEqual(frames.map(f=>f.pos),[3,4,5,6]);
+});
+
+test('Android back returns from privacy to settings', () => {
+  const native=fs.readFileSync('www/app/canvas-native.js','utf8');
+  assert.match(native,/state\.screen==='privacy'[\s\S]*state\.screen='settings'/);
 });
 
 test('board layout no longer pushes the turn card to the bottom', () => {

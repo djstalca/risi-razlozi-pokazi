@@ -87,7 +87,38 @@ function renderSettings(app){
     </select>
    </label>
    <div class="notice">Nastavitve se shranijo na tej napravi in veljajo tudi za naslednjo igro.</div>
+   <button type="button" class="secondary" onclick="setScreen('privacy')">PRAVILNIK O ZASEBNOSTI</button>
   </div>
+ </section>`;
+}
+
+function renderPrivacy(app){
+ app.innerHTML=`
+ ${topbar(`<button class="secondary small" onclick="setScreen('settings')">Nazaj</button>`)}
+ <section class="card privacyCard">
+  <h2>Pravilnik o zasebnosti</h2>
+  <p class="muted">Zadnja posodobitev: 5. oktober 2026</p>
+
+  <h3>Kako aplikacija uporablja podatke</h3>
+  <p><strong>Riši, razloži, pokaži</strong> deluje lokalno na tvoji napravi. Aplikacija ne zahteva uporabniškega računa, ne uporablja oglasov ali analitike in podatkov ne pošilja razvijalcu ali tretjim osebam.</p>
+
+  <h3>Lokalno shranjeni podatki</h3>
+  <p>Na napravi se lahko shranijo imena ekip in igralcev, nastavitve, pozicije ekip, trenutno stanje igre ter zgodovina že prikazanih pojmov, da lahko nadaljuješ prekinjeno igro in da se isti pojem isti dan ne ponovi.</p>
+
+  <h3>Omrežje in dovoljenja</h3>
+  <p>Za igranje internetna povezava ni potrebna. Različica 1.0 nima Android dovoljenja za dostop do interneta ter ne zahteva dostopa do lokacije, stikov, fotografij, kamere ali mikrofona.</p>
+
+  <h3>Hramba in izbris</h3>
+  <p>Shranjeno stanje ostane na napravi, dokler ga aplikacija ne nadomesti z novejšim stanjem ali dokler ne izbrišeš podatkov aplikacije oziroma aplikacije ne odstraniš. Dnevna zgodovina prikazanih pojmov se uporablja samo za preprečevanje ponovitev v istem koledarskem dnevu.</p>
+
+  <h3>Varnost</h3>
+  <p>Android varnostno kopiranje podatkov aplikacije je izključeno, nešifriran omrežni promet je onemogočen in aplikacija v različici 1.0 nima strežniških funkcij.</p>
+
+  <h3>Otroci</h3>
+  <p>Aplikacija ne zbira osebnih podatkov otrok ali drugih uporabnikov.</p>
+
+  <h3>Kontakt</h3>
+  <p>Za vprašanja o zasebnosti ali podporo piši na <strong>djstalca@gmail.com</strong>.</p>
  </section>`;
 }
 
