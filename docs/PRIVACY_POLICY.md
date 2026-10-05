@@ -1,6 +1,6 @@
 # Pravilnik o zasebnosti – Riši, razloži, pokaži
 
-Zadnja posodobitev: 4. oktober 2026
+Zadnja posodobitev: 5. oktober 2026
 
 Aplikacija **Riši, razloži, pokaži** je slovenska družabna igra, ki deluje lokalno na napravi.
 
@@ -42,4 +42,4 @@ Aplikacija ne zbira osebnih podatkov otrok ali drugih uporabnikov.
 
 ## Kontakt
 
-Pred javno objavo bo tukaj dodan neposredni kontakt za vprašanja o zasebnosti. Isti kontakt bo naveden tudi na strani aplikacije v Google Play.
+Za vprašanja o zasebnosti ali podporo: **djstalca@gmail.com**.
