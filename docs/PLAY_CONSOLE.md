@@ -15,6 +15,7 @@ Ta dokument je delovni obrazec za prvo objavo aplikacije **Riši, razloži, poka
 - In-app purchases: **Ne**
 - Account/login: **Ne**
 - Internet za igranje: **Ni potreben**
+- Support / privacy e-mail: **djstalca@gmail.com**
 
 ## App content deklaracije
 
@@ -69,9 +70,9 @@ Screenshoti morajo nastati iz dejanske aplikacije; načrt je v `docs/STORE_ASSET
 
 Besedilo je pripravljeno v `docs/PRIVACY_POLICY.md` in kot HTML v `www/privacy.html`. Pravilnik je dostopen tudi znotraj aplikacije prek **Nastavitve → Pravilnik o zasebnosti**.
 
-Pred oddajo potrebujemo:
-1. neposredni javni kontakt za vprašanja o zasebnosti in podporo,
-2. javno HTTPS povezavo do pravilnika o zasebnosti.
+Kontakt za vprašanja o zasebnosti in podporo je **djstalca@gmail.com**.
+
+Pred oddajo potrebujemo še javno HTTPS povezavo do pravilnika o zasebnosti.
 
 Repozitorij je trenutno javen, vendar URL datoteke v GitHub repozitoriju ni mišljen kot končni Play Store Privacy Policy URL. Za javno izdajo objavi `www/privacy.html` kot običajno HTTPS spletno stran, na primer prek GitHub Pages ali lastne domene.
 
