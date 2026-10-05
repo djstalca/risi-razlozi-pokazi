@@ -74,6 +74,7 @@ test('privacy policy is accessible from settings without replacing an unfinished
   const parsed = JSON.parse(privacyHtml);
   assert.match(parsed.html, /Hramba in izbris/);
   assert.match(parsed.html, /Android dovoljenja za dostop do interneta/);
+  assert.match(parsed.html, /djstalca@gmail\.com/);
   assert.equal(parsed.saved, 'board');
 });
 
